@@ -1,0 +1,143 @@
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import type { Transaction, BusinessProfile } from '@/lib/types';
+import { formatCurrency, formatDate } from './format';
+
+export function generateInvoicePDF(txn: Transaction, business: BusinessProfile): jsPDF {
+  const doc = new jsPDF();
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+
+  // Header
+  doc.setFontSize(20);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(37, 99, 235);
+  doc.text(business.name || 'My Business', margin, 22);
+
+  doc.setFontSize(9);
+  doc.setTextColor(100);
+  doc.setFont('helvetica', 'normal');
+  doc.text(business.address || '', margin, 28);
+  doc.text(`Phone: ${business.phone}  |  Email: ${business.email}`, margin, 33);
+  if (business.gstin) doc.text(`GSTIN: ${business.gstin}`, margin, 38);
+
+  // Invoice title
+  doc.setFontSize(16);
+  doc.setTextColor(0);
+  doc.setFont('helvetica', 'bold');
+  const titleMap: Record<string, string> = {
+    SaleInvoice: 'TAX INVOICE', PurchaseBill: 'PURCHASE BILL',
+    Estimate: 'ESTIMATE / QUOTATION', DeliveryChallan: 'DELIVERY CHALLAN',
+    SaleReturn: 'CREDIT NOTE', PurchaseReturn: 'DEBIT NOTE',
+    PaymentIn: 'PAYMENT RECEIPT', PaymentOut: 'PAYMENT VOUCHER',
+  };
+  const title = titleMap[txn.type] || 'INVOICE';
+  doc.text(title, pageWidth - margin, 22, { align: 'right' });
+
+  doc.setFontSize(9);
+  doc.setFont('helvetica', 'normal');
+  doc.setTextColor(60);
+  doc.text(`No: ${txn.invoice_no}`, pageWidth - margin, 28, { align: 'right' });
+  doc.text(`Date: ${formatDate(txn.date)}`, pageWidth - margin, 33, { align: 'right' });
+  if (txn.due_date) doc.text(`Due: ${formatDate(txn.due_date)}`, pageWidth - margin, 38, { align: 'right' });
+
+  // Bill To
+  doc.setFontSize(10);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(0);
+  doc.text('Bill To:', margin, 50);
+  doc.setFont('helvetica', 'normal');
+  doc.text(txn.party_name || '-', margin, 56);
+
+  // Items table
+  const tableData = txn.lines.map((l) => [
+    l.item_name, l.hsn || '-',
+    `${l.qty} ${l.unit}`, formatCurrency(l.rate),
+    l.discount_percent ? `${l.discount_percent}%` : '-',
+    formatCurrency(l.amount),
+  ]);
+
+  autoTable(doc, {
+    startY: 64,
+    head: [['Item', 'HSN', 'Qty', 'Rate', 'Disc%', 'Amount']],
+    body: tableData.length ? tableData : [['N/A', '', '', '', '', '']],
+    theme: 'striped',
+    headStyles: { fillColor: [37, 99, 235], fontSize: 9 },
+    bodyStyles: { fontSize: 9 },
+    columnStyles: { 2: { halign: 'right' }, 3: { halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' } },
+    margin: { left: margin, right: margin },
+  });
+
+  let y = (doc as any).lastAutoTable.finalY + 8;
+
+  // Totals
+  const labelX = pageWidth - margin - 80;
+  const valueX = pageWidth - margin;
+  const cur = business.currency || '₹';
+
+  const totals: [string, string][] = [['Subtotal', formatCurrency(txn.sub_total, cur)]];
+  if (txn.discount_amount > 0) totals.push(['Discount', formatCurrency(txn.discount_amount, cur)]);
+  if (txn.additional_charges > 0) totals.push(['Additional Charges', formatCurrency(txn.additional_charges, cur)]);
+  if (txn.cgst > 0) totals.push(['CGST', formatCurrency(txn.cgst, cur)]);
+  if (txn.sgst > 0) totals.push(['SGST', formatCurrency(txn.sgst, cur)]);
+  if (txn.igst > 0) totals.push(['IGST', formatCurrency(txn.igst, cur)]);
+  if (txn.round_off !== 0) totals.push(['Round Off', formatCurrency(txn.round_off, cur)]);
+
+  doc.setFontSize(9);
+  for (const [label, val] of totals) {
+    doc.setTextColor(80);
+    doc.setFont('helvetica', 'normal');
+    doc.text(label, labelX, y);
+    doc.text(val, valueX, y, { align: 'right' });
+    y += 5;
+  }
+
+  // Total
+  doc.setFillColor(37, 99, 235);
+  doc.rect(labelX - 4, y - 4, valueX - labelX + 8, 9, 'F');
+  doc.setTextColor(255);
+  doc.setFont('helvetica', 'bold');
+  doc.text('Total', labelX, y + 1);
+  doc.text(formatCurrency(txn.total_amount, cur), valueX, y + 1, { align: 'right' });
+  y += 16;
+
+  // Payment info
+  doc.setTextColor(0);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.text(`Payment Type: ${txn.payment_type}`, margin, y);
+  doc.text(`Paid: ${formatCurrency(txn.paid_amount, cur)}`, margin + 70, y);
+  doc.text(`Balance: ${formatCurrency(txn.balance_amount, cur)}`, margin + 120, y);
+
+  if (txn.terms) {
+    y += 10;
+    doc.setFont('helvetica', 'bold');
+    doc.text('Terms & Conditions:', margin, y);
+    doc.setFont('helvetica', 'normal');
+    const splitTerms = doc.splitTextToSize(txn.terms, pageWidth - margin * 2);
+    doc.text(splitTerms, margin, y + 5);
+  }
+
+  y = doc.internal.pageSize.getHeight() - 20;
+  doc.setDrawColor(150);
+  doc.line(pageWidth - margin - 60, y - 5, pageWidth - margin, y - 5);
+  doc.setFontSize(8);
+  doc.text('Authorised Signature', pageWidth - margin - 30, y, { align: 'center' });
+
+  doc.setFontSize(7);
+  doc.setTextColor(150);
+  doc.text('Generated by Vyapar Clone', margin, doc.internal.pageSize.getHeight() - 5);
+
+  return doc;
+}
+
+export function printTransaction(txn: Transaction, business: BusinessProfile) {
+  const doc = generateInvoicePDF(txn, business);
+  doc.autoPrint();
+  window.open(doc.output('bloburl'), '_blank');
+}
+
+export function downloadTransactionPDF(txn: Transaction, business: BusinessProfile) {
+  const doc = generateInvoicePDF(txn, business);
+  doc.save(`${txn.invoice_no}.pdf`);
+}
