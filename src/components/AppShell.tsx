@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { useAuth } from '@/lib/auth';
+import { getAuthToken } from '@/lib/auth';
 
 const pageTitles: Record<string, string> = {
   '/': 'Business Dashboard',
@@ -43,25 +44,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (isLoading) return;
+    // Only redirect to login if there's genuinely no token (not just a mid-render state lag)
+    const hasToken = !!getAuthToken();
     if (isLoginPage && user) {
       router.replace('/');
-    } else if (!isLoginPage && !user) {
+    } else if (!isLoginPage && !user && !hasToken) {
       router.replace('/login');
     }
   }, [isLoading, user, isLoginPage, router]);
 
-  // Login page renders without sidebar/topbar
+  // Login page — always render the login form directly
   if (isLoginPage) {
     return <>{children}</>;
   }
 
-  // Show loading while checking auth
-  if (isLoading || !user) {
+  // Show loading while auth check is in progress
+  if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-vyapar-600" />
           <p className="text-sm text-slate-400">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Not authenticated and no token — redirect is handled by useEffect above
+  if (!user) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-slate-50">
+        <div className="text-center">
+          <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-vyapar-600" />
+          <p className="text-sm text-slate-400">Redirecting...</p>
         </div>
       </div>
     );
