@@ -14,8 +14,8 @@
     "swr": "^2.3.3",
     "lucide-react": "^0.513.0",
     "recharts": "^2.15.3",
-    "jspdf": "^4.2.1",
-    "jspdf-autotable": "^3.8.4",
+    "jspdf": "2.5.2",
+    "jspdf-autotable": "3.8.4",
     "date-fns": "^4.1.0"
   },
   "devDependencies": {
