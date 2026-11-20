@@ -6,12 +6,13 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input, Select } from '@/components/ui/Input';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/config';
 import { Save, Building2, Sliders, FileText } from 'lucide-react';
 import type { BusinessProfile, Settings as SettingsType } from '@/lib/types';
 
 export default function SettingsPage() {
-  const { data: businessArr, mutate: mutateBiz } = useSWR('/api/business/', (url: string) => fetch(url).then((r) => r.json()));
-  const { data: settingsArr, mutate: mutateSet } = useSWR('/api/settings/', (url: string) => fetch(url).then((r) => r.json()));
+  const { data: businessArr, mutate: mutateBiz } = useSWR(`${API_BASE}/business/`, (url: string) => fetch(url).then((r) => r.json()));
+  const { data: settingsArr, mutate: mutateSet } = useSWR(`${API_BASE}/settings/`, (url: string) => fetch(url).then((r) => r.json()));
 
   const business = (businessArr as BusinessProfile[] | undefined)?.[0];
   const settings = (settingsArr as SettingsType[] | undefined)?.[0];

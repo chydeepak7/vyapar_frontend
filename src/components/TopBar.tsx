@@ -3,9 +3,10 @@
 import { Search, Bell, Plus } from 'lucide-react';
 import Link from 'next/link';
 import useSWR from 'swr';
+import { API_BASE } from '@/lib/config';
 
 export function TopBar({ title }: { title: string }) {
-  const { data: business } = useSWR('/api/business/', (url: string) =>
+  const { data: business } = useSWR(`${API_BASE}/business/`, (url: string) =>
     fetch(url).then((r) => r.json()).then((arr: any[]) => arr?.[0])
   );
 

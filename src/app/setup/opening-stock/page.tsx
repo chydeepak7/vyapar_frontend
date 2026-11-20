@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, TextArea } from '@/components/ui/Input';
 import { formatCurrency } from '@/utils/format';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/config';
 import { Plus, Pencil, Trash2, Archive, Search } from 'lucide-react';
 import type { OpeningStock, Item, Warehouse } from '@/lib/types';
 

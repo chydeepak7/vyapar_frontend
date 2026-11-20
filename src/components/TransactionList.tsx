@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { printTransaction, downloadTransactionPDF } from '@/utils/pdf';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/config';
 import { Plus, Search, Printer, Download, Trash2, FileText, Eye } from 'lucide-react';
 import type { TxnType, Transaction, BusinessProfile } from '@/lib/types';
 
@@ -20,9 +21,9 @@ interface Props {
 
 export function TransactionList({ txnType, title, createPath, editPathBase }: Props) {
   const router = useRouter();
-  const { data: business } = useSWRImmutable('/api/business/', (url: string) => fetch(url).then((r) => r.json()).then((a: any[]) => a?.[0]));
+  const { data: business } = useSWRImmutable(`${API_BASE}/business/`, (url: string) => fetch(url).then((r) => r.json()).then((a: any[]) => a?.[0]));
   const { data: transactions, mutate } = useSWR<Transaction[]>(
-    `/api/transactions/?type=${txnType}`,
+    `${API_BASE}/transactions/?type=${txnType}`,
     (url: string) => fetch(url).then((r) => r.json())
   );
   const [search, setSearch] = useState('');
@@ -43,10 +44,10 @@ export function TransactionList({ txnType, title, createPath, editPathBase }: Pr
     if (!confirm('Delete this transaction?')) return;
     await api.deleteTransaction(id);
     mutate();
-    globalMutate('/api/transactions/');
-    globalMutate('/api/dashboard/');
-    globalMutate('/api/items/');
-    globalMutate('/api/party-balances/');
+    globalMutate(`${API_BASE}/transactions/`);
+    globalMutate(`${API_BASE}/dashboard/`);
+    globalMutate(`${API_BASE}/items/`);
+    globalMutate(`${API_BASE}/party-balances/`);
   };
 
   return (

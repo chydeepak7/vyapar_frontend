@@ -7,6 +7,7 @@ import { formatCurrency, formatDate } from '@/utils/format';
 import { Card } from '@/components/ui/Card';
 import { FileText, ShoppingBag, BookOpen, TrendingUp, FileBarChart, Package, Users } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { API_BASE } from '@/lib/config';
 
 type ReportType = 'sale' | 'purchase' | 'all' | 'pl' | 'gstr1' | 'gstr3b' | 'stock';
 
@@ -26,7 +27,7 @@ export default function ReportsPage() {
   const [toDate, setToDate] = useState('');
 
   const query = `?type=${activeTab}${fromDate ? '&from_date=' + fromDate : ''}${toDate ? '&to_date=' + toDate : ''}`;
-  const { data, error } = useSWR(`/api/reports/${query}`, (url: string) => fetch(url).then((r) => r.json()));
+  const { data, error } = useSWR(`${API_BASE}/reports/${query}`, (url: string) => fetch(url).then((r) => r.json()));
 
   return (
     <div className="space-y-4">

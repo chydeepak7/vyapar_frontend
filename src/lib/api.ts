@@ -1,10 +1,9 @@
+import { API_BASE } from './config';
 import type {
   BusinessProfile, Party, Item, Transaction, Expense, OtherIncome,
   BankAccount, Settings, DashboardData, PartyBalance,
   Category, Unit, Warehouse, OpeningStock,
 } from './types';
-
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
 
 async function fetcher<T>(url: string): Promise<T> {
   const res = await fetch(url);
