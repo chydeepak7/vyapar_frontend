@@ -141,7 +141,6 @@ export const api = {
   getUsers: () => fetcher<User[]>(`${API_BASE}/auth/users/`),
   createUser: (data: { username: string; email?: string; password: string; is_superuser?: boolean }) =>
     send<User>(`${API_BASE}/auth/users/`, 'POST', data),
-  deleteUser: (id: number) => send<void>(`${API_BASE}/auth/users/${id}/`, 'DELETE'),
   updateUser: (id: number, data: Partial<User>) =>
     send<User>(`${API_BASE}/auth/users/${id}/`, 'PATCH', data),
 

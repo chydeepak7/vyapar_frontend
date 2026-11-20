@@ -91,6 +91,10 @@ export interface Item {
   barcode?: string;
   description?: string;
   mrp: number;
+  // Carton / Piece conversion
+  pieces_per_carton: number;      // how many pcs in 1 carton
+  carton_purchase_price: number;  // price per carton on purchase
+  carton_sale_price: number;      // price per carton on sale
   created_at: string;
 }
 

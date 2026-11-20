@@ -16,6 +16,7 @@ const emptyItem = {
   hsn: '', unit: null as number | null, unit_name: '',
   sale_price: 0, purchase_price: 0, gst_rate: 0,
   stock: 0, min_stock: 0, barcode: '', description: '', mrp: 0,
+  pieces_per_carton: 1, carton_purchase_price: 0, carton_sale_price: 0,
 };
 
 export default function ItemsPage() {
@@ -65,6 +66,9 @@ export default function ItemsPage() {
       barcode: item.barcode || '',
       description: item.description || '',
       mrp: item.mrp,
+      pieces_per_carton: item.pieces_per_carton ?? 1,
+      carton_purchase_price: item.carton_purchase_price ?? 0,
+      carton_sale_price: item.carton_sale_price ?? 0,
     });
     setModalOpen(true);
   };
@@ -249,6 +253,44 @@ export default function ItemsPage() {
           <Input label="Barcode" value={form.barcode} onChange={(e) => set('barcode', e.target.value)} />
           <div className="col-span-2">
             <TextArea label="Description" rows={2} value={form.description} onChange={(e) => set('description', e.target.value)} />
+          </div>
+
+          {/* Carton / Piece conversion section */}
+          <div className="col-span-2 mt-1 rounded-lg border border-blue-100 bg-blue-50 p-3">
+            <div className="mb-2 flex items-center gap-2 text-xs font-semibold text-blue-700">
+              <span>📦</span> Carton ↔ Piece Conversion
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              <Input
+                label="Pieces per Carton"
+                type="number"
+                value={form.pieces_per_carton}
+                onChange={(e) => {
+                  const ppc = Math.max(1, +e.target.value);
+                  setForm((p) => ({
+                    ...p,
+                    pieces_per_carton: ppc,
+                    carton_purchase_price: p.purchase_price > 0 ? +(p.purchase_price * ppc).toFixed(2) : p.carton_purchase_price,
+                    carton_sale_price: p.sale_price > 0 ? +(p.sale_price * ppc).toFixed(2) : p.carton_sale_price,
+                  }));
+                }}
+              />
+              <Input
+                label="Carton Purchase Price"
+                type="number"
+                value={form.carton_purchase_price}
+                onChange={(e) => set('carton_purchase_price', +e.target.value)}
+              />
+              <Input
+                label="Carton Sale Price"
+                type="number"
+                value={form.carton_sale_price}
+                onChange={(e) => set('carton_sale_price', +e.target.value)}
+              />
+            </div>
+            <p className="mt-1 text-xs text-blue-500">
+              1 Carton = {form.pieces_per_carton} Pcs · Purchase: रू{form.purchase_price}/pc → रू{form.carton_purchase_price}/ctn · Sale: रू{form.sale_price}/pc → रू{form.carton_sale_price}/ctn
+            </p>
           </div>
         </div>
       </Modal>

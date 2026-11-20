@@ -5,12 +5,11 @@ import useSWR from 'swr';
 import { api } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
 import { API_BASE } from '@/lib/config';
-import { authHeaders } from '@/lib/auth';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { Modal } from '@/components/ui/Modal';
-import { UserPlus, Trash2, Shield, User as UserIcon, Mail } from 'lucide-react';
+import { UserPlus, Shield, User as UserIcon } from 'lucide-react';
 import type { User } from '@/lib/types';
 
 export default function AdminPage() {
@@ -45,16 +44,6 @@ export default function AdminPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this user? All their business data will remain but become orphaned.')) return;
-    try {
-      await api.deleteUser(id);
-      mutate();
-    } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to delete user');
-    }
-  };
-
   if (error) return <div className="text-center text-red-400 py-10">Error loading users. {error.message}</div>;
   if (!users) return <div className="text-center text-slate-400 py-10">Loading users...</div>;
 
@@ -75,7 +64,6 @@ export default function AdminPage() {
               <th className="px-4 py-3 font-medium">Email</th>
               <th className="px-4 py-3 font-medium">Role</th>
               <th className="px-4 py-3 font-medium">Status</th>
-              <th className="px-4 py-3 text-right font-medium">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -109,17 +97,6 @@ export default function AdminPage() {
                     <span className="text-xs font-medium text-emerald-600">Active</span>
                   ) : (
                     <span className="text-xs font-medium text-slate-400">Inactive</span>
-                  )}
-                </td>
-                <td className="px-4 py-3 text-right">
-                  {u.id !== currentUser?.id && (
-                    <button
-                      onClick={() => handleDelete(u.id)}
-                      className="rounded-lg p-1.5 text-red-500 hover:bg-red-50"
-                      title="Delete user"
-                    >
-                      <Trash2 size={16} />
-                    </button>
                   )}
                 </td>
               </tr>
