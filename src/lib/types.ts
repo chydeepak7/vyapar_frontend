@@ -72,6 +72,15 @@ export interface Party {
   created_at: string;
 }
 
+// ============ Item Unit Conversion ============
+export interface ItemUnitConversion {
+  id?: number;
+  unit_name: string;          // e.g. "Carton", "Box", "Dozen"
+  conversion_factor: number;  // 1 of this unit = N base units
+  purchase_price: number;     // price per this unit on purchase
+  sale_price: number;         // price per this unit on sale
+}
+
 // ============ Item ============
 export interface Item {
   id: number;
@@ -91,10 +100,7 @@ export interface Item {
   barcode?: string;
   description?: string;
   mrp: number;
-  // Carton / Piece conversion
-  pieces_per_carton: number;      // how many pcs in 1 carton
-  carton_purchase_price: number;  // price per carton on purchase
-  carton_sale_price: number;      // price per carton on sale
+  unit_conversions: ItemUnitConversion[];   // alternate units (Carton, Box, etc.)
   created_at: string;
 }
 
@@ -125,6 +131,7 @@ export interface TransactionLine {
   discount_percent: number;
   gst_rate: number;
   amount: number;
+  conversion_factor: number;  // 1 = base unit; >1 = qty is in an alternate unit
 }
 
 // ============ Transaction ============
