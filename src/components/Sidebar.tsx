@@ -64,7 +64,7 @@ export function Sidebar() {
   const { user } = useAuth();
   const [expanded, setExpanded] = useState<string | null>('Sale');
 
-  const sections = user?.is_superuser
+  const sections: NavSection[] = user?.is_superuser
     ? [...navSections, { label: 'User Management', icon: <ShieldCheck size={18} />, path: '/admin' }]
     : navSections;
 
