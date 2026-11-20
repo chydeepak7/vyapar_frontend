@@ -91,11 +91,6 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <div className="mt-4 rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-500">
-            <p className="font-medium text-slate-600">Default credentials:</p>
-            <p className="mt-0.5">Superadmin: <code className="text-vyapar-600">admin / admin123</code></p>
-            <p className="mt-0.5">User: <code className="text-vyapar-600">demo / demo123</code></p>
-          </div>
         </div>
       </div>
     </div>
