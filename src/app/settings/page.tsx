@@ -11,8 +11,8 @@ import { Save, Building2, Sliders, FileText } from 'lucide-react';
 import type { BusinessProfile, Settings as SettingsType } from '@/lib/types';
 
 export default function SettingsPage() {
-  const { data: businessArr, mutate: mutateBiz } = useSWR(`${API_BASE}/business/`, (url: string) => fetch(url).then((r) => r.json()));
-  const { data: settingsArr, mutate: mutateSet } = useSWR(`${API_BASE}/settings/`, (url: string) => fetch(url).then((r) => r.json()));
+  const { data: businessArr, error: bizError, isLoading: bizLoading, mutate: mutateBiz } = useSWR(`${API_BASE}/business/`);
+  const { data: settingsArr, error: setError, isLoading: setLoading, mutate: mutateSet } = useSWR(`${API_BASE}/settings/`);
 
   const business = (businessArr as BusinessProfile[] | undefined)?.[0];
   const settings = (settingsArr as SettingsType[] | undefined)?.[0];
@@ -50,7 +50,31 @@ export default function SettingsPage() {
     setTimeout(() => setSaved(false), 2000);
   };
 
-  if (!business || !settings) return <div className="text-center text-slate-400 py-10">Loading settings...</div>;
+  // Show error state if either fetch failed (global SWR has shouldRetryOnError: false)
+  const hasError = bizError || setError;
+  const isLoading = bizLoading || setLoading;
+
+  if (hasError && !business && !settings) {
+    return (
+      <div className="text-center py-10 space-y-3">
+        <p className="text-red-500 text-sm">Failed to load settings. Please check your connection and try again.</p>
+        <Button onClick={() => { mutateBiz(); mutateSet(); }}>Retry</Button>
+      </div>
+    );
+  }
+
+  if (isLoading && (!business || !settings)) {
+    return <div className="text-center text-slate-400 py-10">Loading settings...</div>;
+  }
+
+  if (!business || !settings) {
+    return (
+      <div className="text-center py-10 space-y-3">
+        <p className="text-slate-400 text-sm">No settings data found. This usually means the database hasn&apos;t been seeded yet.</p>
+        <Button onClick={() => { mutateBiz(); mutateSet(); }}>Refresh</Button>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl space-y-4">

@@ -1,3 +1,13 @@
+// ============ User ============
+export interface User {
+  id: number;
+  username: string;
+  email: string;
+  is_superuser: boolean;
+  is_staff: boolean;
+  is_active: boolean;
+}
+
 // ============ Business Profile ============
 export interface BusinessProfile {
   id: number;

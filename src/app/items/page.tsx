@@ -20,16 +20,13 @@ const emptyItem = {
 
 export default function ItemsPage() {
   const { data: items, mutate } = useSWR<Item[]>(
-    `${API_BASE}/items/`,
-    (url: string) => fetch(url).then((r) => r.json()),
+    `${API_BASE}/items/`
   );
   const { data: categories } = useSWR<Category[]>(
-    `${API_BASE}/categories/`,
-    (url: string) => fetch(url).then((r) => r.json()),
+    `${API_BASE}/categories/`
   );
   const { data: units } = useSWR<Unit[]>(
-    `${API_BASE}/units/`,
-    (url: string) => fetch(url).then((r) => r.json()),
+    `${API_BASE}/units/`
   );
 
   const [search, setSearch] = useState('');

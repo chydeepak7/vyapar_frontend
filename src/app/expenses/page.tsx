@@ -17,7 +17,7 @@ const emptyExpense: Omit<Expense, 'id' | 'created_at'> = {
 };
 
 export default function ExpensesPage() {
-  const { data: expenses, mutate } = useSWR<Expense[]>(`${API_BASE}/expenses/`, (url: string) => fetch(url).then((r) => r.json()));
+  const { data: expenses, mutate } = useSWR<Expense[]>(`${API_BASE}/expenses/`);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);

@@ -1,12 +1,18 @@
 import { API_BASE } from './config';
+import { authHeaders, clearAuth } from './auth';
 import type {
   BusinessProfile, Party, Item, Transaction, Expense, OtherIncome,
   BankAccount, Settings, DashboardData, PartyBalance,
-  Category, Unit, Warehouse, OpeningStock,
+  Category, Unit, Warehouse, OpeningStock, User,
 } from './types';
 
 async function fetcher<T>(url: string): Promise<T> {
-  const res = await fetch(url);
+  const res = await fetch(url, { headers: { ...authHeaders() } });
+  if (res.status === 401) {
+    clearAuth();
+    if (typeof window !== 'undefined') window.location.href = '/login';
+    throw new Error('Session expired');
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`API ${res.status}: ${text}`);
@@ -18,9 +24,14 @@ async function fetcher<T>(url: string): Promise<T> {
 async function send<T>(url: string, method: string, body?: unknown): Promise<T> {
   const res = await fetch(url, {
     method,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: body ? JSON.stringify(body) : undefined,
   });
+  if (res.status === 401) {
+    clearAuth();
+    if (typeof window !== 'undefined') window.location.href = '/login';
+    throw new Error('Session expired');
+  }
   if (!res.ok) {
     const text = await res.text();
     throw new Error(`API ${res.status}: ${text}`);
@@ -125,6 +136,17 @@ export const api = {
     if (to_date) q.set('to_date', to_date);
     return fetcher<any>(`${API_BASE}/reports/?${q}`);
   },
+
+  // Users (superadmin only)
+  getUsers: () => fetcher<User[]>(`${API_BASE}/auth/users/`),
+  createUser: (data: { username: string; email?: string; password: string; is_superuser?: boolean }) =>
+    send<User>(`${API_BASE}/auth/users/`, 'POST', data),
+  deleteUser: (id: number) => send<void>(`${API_BASE}/auth/users/${id}/`, 'DELETE'),
+  updateUser: (id: number, data: Partial<User>) =>
+    send<User>(`${API_BASE}/auth/users/${id}/`, 'PATCH', data),
+
+  // Current user
+  getMe: () => fetcher<User>(`${API_BASE}/auth/me/`),
 };
 
 // SWR fetcher

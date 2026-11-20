@@ -15,8 +15,7 @@ const empty: Omit<Warehouse, 'id' | 'created_at'> = {
 
 export default function WarehousesPage() {
   const { data: warehouses, mutate } = useSWR<Warehouse[]>(
-    '/api/warehouses/',
-    (url: string) => fetch(url).then((r) => r.json()),
+    '/api/warehouses/'
   );
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Warehouse | null>(null);

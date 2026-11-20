@@ -16,7 +16,7 @@ const emptyIncome: Omit<OtherIncomeType, 'id' | 'created_at'> = {
 };
 
 export default function OtherIncomePage() {
-  const { data: incomes, mutate } = useSWR<OtherIncomeType[]>(`${API_BASE}/other-incomes/`, (url: string) => fetch(url).then((r) => r.json()));
+  const { data: incomes, mutate } = useSWR<OtherIncomeType[]>(`${API_BASE}/other-incomes/`);
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<OtherIncomeType | null>(null);

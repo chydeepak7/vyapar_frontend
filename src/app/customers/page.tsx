@@ -19,12 +19,10 @@ const emptyCustomer: Omit<Party, 'id' | 'created_at'> = {
 
 export default function CustomersPage() {
   const { data: parties } = useSWR<Party[]>(
-    `${API_BASE}/parties/`,
-    (url: string) => fetch(url).then((r) => r.json()),
+    `${API_BASE}/parties/`
   );
   const { data: balances, mutate } = useSWR<PartyBalance[]>(
-    `${API_BASE}/party-balances/`,
-    (url: string) => fetch(url).then((r) => r.json()),
+    `${API_BASE}/party-balances/`
   );
 
   const [search, setSearch] = useState('');

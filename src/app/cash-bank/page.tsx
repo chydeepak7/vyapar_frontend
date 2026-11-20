@@ -22,7 +22,7 @@ const typeIcons: Record<AccountType, React.ReactNode> = {
 };
 
 export default function CashBankPage() {
-  const { data: accounts, mutate } = useSWR<BankAccount[]>('/api/bank-accounts/', (url: string) => fetch(url).then((r) => r.json()));
+  const { data: accounts, mutate } = useSWR<BankAccount[]>('/api/bank-accounts/');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<BankAccount | null>(null);
   const [form, setForm] = useState<any>(emptyAccount);

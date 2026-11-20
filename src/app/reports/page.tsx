@@ -27,7 +27,7 @@ export default function ReportsPage() {
   const [toDate, setToDate] = useState('');
 
   const query = `?type=${activeTab}${fromDate ? '&from_date=' + fromDate : ''}${toDate ? '&to_date=' + toDate : ''}`;
-  const { data, error } = useSWR(`${API_BASE}/reports/${query}`, (url: string) => fetch(url).then((r) => r.json()));
+  const { data, error } = useSWR(`${API_BASE}/reports/${query}`);
 
   return (
     <div className="space-y-4">

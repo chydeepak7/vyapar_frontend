@@ -18,8 +18,8 @@ const emptyParty: Omit<Party, 'id' | 'created_at'> = {
 };
 
 export default function PartiesPage() {
-  const { data: parties } = useSWR<Party[]>(`${API_BASE}/parties/`, (url: string) => fetch(url).then((r) => r.json()));
-  const { data: balances, mutate } = useSWR<PartyBalance[]>(`${API_BASE}/party-balances/`, (url: string) => fetch(url).then((r) => r.json()));
+  const { data: parties } = useSWR<Party[]>(`${API_BASE}/parties/`);
+  const { data: balances, mutate } = useSWR<PartyBalance[]>(`${API_BASE}/party-balances/`);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'All' | PartyType>('All');
   const [modalOpen, setModalOpen] = useState(false);

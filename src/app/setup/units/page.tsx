@@ -13,8 +13,7 @@ const empty = { name: '', short_name: '' };
 
 export default function UnitsPage() {
   const { data: units, mutate } = useSWR<Unit[]>(
-    '/api/units/',
-    (url: string) => fetch(url).then((r) => r.json()),
+    '/api/units/'
   );
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Unit | null>(null);

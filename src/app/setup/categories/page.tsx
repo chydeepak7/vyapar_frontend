@@ -13,8 +13,7 @@ const empty = { name: '', description: '' };
 
 export default function CategoriesPage() {
   const { data: categories, mutate } = useSWR<Category[]>(
-    '/api/categories/',
-    (url: string) => fetch(url).then((r) => r.json()),
+    '/api/categories/'
   );
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Category | null>(null);

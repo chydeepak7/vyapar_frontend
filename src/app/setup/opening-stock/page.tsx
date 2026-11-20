@@ -24,16 +24,13 @@ const empty = {
 
 export default function OpeningStockPage() {
   const { data: stocks, mutate } = useSWR<OpeningStock[]>(
-    `${API_BASE}/opening-stocks/`,
-    (url: string) => fetch(url).then((r) => r.json()),
+    `${API_BASE}/opening-stocks/`
   );
   const { data: items } = useSWR<Item[]>(
-    `${API_BASE}/items/`,
-    (url: string) => fetch(url).then((r) => r.json()),
+    `${API_BASE}/items/`
   );
   const { data: warehouses } = useSWR<Warehouse[]>(
-    `${API_BASE}/warehouses/`,
-    (url: string) => fetch(url).then((r) => r.json()),
+    `${API_BASE}/warehouses/`
   );
 
   const [search, setSearch] = useState('');

@@ -7,8 +7,10 @@ import {
   Wallet, Users, Package, Settings as SettingsIcon, Receipt,
   ArrowDownToLine, ArrowUpFromLine, Undo2, Truck,
   ClipboardList, BarChart3, Tag, Ruler, Warehouse, Archive, UserCheck, Building2,
+  ShieldCheck,
 } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '@/lib/auth';
 
 interface NavChild { label: string; path: string; icon: React.ReactNode }
 interface NavSection {
@@ -59,7 +61,12 @@ const navSections: NavSection[] = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { user } = useAuth();
   const [expanded, setExpanded] = useState<string | null>('Sale');
+
+  const sections = user?.is_superuser
+    ? [...navSections, { label: 'User Management', icon: <ShieldCheck size={18} />, path: '/admin' }]
+    : navSections;
 
   return (
     <aside className="flex h-full w-60 flex-col border-r border-slate-200 bg-white">
@@ -76,7 +83,7 @@ export function Sidebar() {
       </Link>
 
       <nav className="flex-1 overflow-y-auto py-2">
-        {navSections.map((section) => {
+        {sections.map((section) => {
           if (section.path && !section.children) {
             const active = pathname === section.path;
             return (
