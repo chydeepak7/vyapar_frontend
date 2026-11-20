@@ -9,6 +9,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  reloadUser: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   login: async () => {},
   logout: () => {},
+  reloadUser: async () => {},
 });
 
 export function getAuthToken(): string | null {
@@ -50,22 +52,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  useEffect(() => {
+  const loadUser = useCallback(async () => {
     const token = getAuthToken();
     if (token) {
-      fetchMe(token)
-        .then((userData) => {
-          if (userData) {
-            setUser(userData);
-          } else {
-            clearAuth();
-          }
-        })
-        .finally(() => setIsLoading(false));
-    } else {
-      setIsLoading(false);
+      const userData = await fetchMe(token);
+      if (userData) {
+        setUser(userData);
+      } else {
+        clearAuth();
+        setUser(null);
+      }
     }
+    setIsLoading(false);
   }, [fetchMe]);
+
+  useEffect(() => {
+    loadUser();
+  }, [loadUser]);
 
   const login = async (username: string, password: string) => {
     const res = await fetch(`${API_BASE}/auth/token/`, {
@@ -81,12 +84,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('access_token', access);
     localStorage.setItem('refresh_token', refresh);
 
+    // Try to fetch user info; if it fails (e.g. transient network error),
+    // the AuthProvider's useEffect will retry on next render using the
+    // token already stored in localStorage — so we never block login.
     const userData = await fetchMe(access);
     if (userData) {
       setUser(userData);
-    } else {
-      throw new Error('Failed to fetch user info');
     }
+    // userData being null is not a fatal error at this point; the tokens
+    // are stored and the shell will pick them up on redirect.
   };
 
   const logout = () => {
@@ -95,7 +101,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ user, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, reloadUser: loadUser }}>
       {children}
     </AuthContext.Provider>
   );

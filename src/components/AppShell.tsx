@@ -32,7 +32,6 @@ const pageTitles: Record<string, string> = {
 function getTitle(pathname: string): string {
   if (pathname.includes('/new')) return 'New Transaction';
   if (pathname.includes('/edit')) return 'Edit Transaction';
-  // Strip trailing slash for lookup
   const key = pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : pathname;
   return pageTitles[key] || 'Vyapar';
 }
@@ -40,22 +39,26 @@ function getTitle(pathname: string): string {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, reloadUser } = useAuth();
 
-  // Handle trailing slash: /login and /login/ are both the login page
   const isLoginPage = pathname === '/login' || pathname === '/login/';
 
   useEffect(() => {
     if (isLoading) return;
     const hasToken = !!getAuthToken();
     if (isLoginPage && user) {
+      // Already logged in — go to dashboard
       router.replace('/');
+    } else if (!isLoginPage && !user && hasToken) {
+      // Token exists but user not loaded yet — retry fetching user info
+      reloadUser();
     } else if (!isLoginPage && !user && !hasToken) {
+      // No token at all — go to login
       router.replace('/login');
     }
-  }, [isLoading, user, isLoginPage, router]);
+  }, [isLoading, user, isLoginPage, router, reloadUser]);
 
-  // Login page — always render the login form, no shell
+  // Login page — render without shell
   if (isLoginPage) {
     return <>{children}</>;
   }
@@ -72,7 +75,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // No user, no token — wait for useEffect to redirect
+  // No user — waiting for redirect or reload
   if (!user) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
