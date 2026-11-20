@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -36,19 +36,18 @@ function getTitle(pathname: string): string {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { user, isLoading } = useAuth();
 
   const isLoginPage = pathname === '/login';
 
   useEffect(() => {
     if (!isLoading && !user && !isLoginPage) {
-      router.push('/login');
+      window.location.href = '/login';
     }
     if (!isLoading && user && isLoginPage) {
-      router.push('/');
+      window.location.href = '/';
     }
-  }, [isLoading, user, isLoginPage, router]);
+  }, [isLoading, user, isLoginPage]);
 
   // Login page renders without sidebar/topbar
   if (isLoginPage) {
