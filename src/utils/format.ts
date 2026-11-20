@@ -1,5 +1,5 @@
-export function formatCurrency(amount: number, symbol = '₹', decimals = 2): string {
-  const formatted = Math.abs(amount).toLocaleString('en-IN', {
+export function formatCurrency(amount: number, symbol = 'रू', decimals = 2): string {
+  const formatted = Math.abs(amount).toLocaleString('en-NP', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals,
   });

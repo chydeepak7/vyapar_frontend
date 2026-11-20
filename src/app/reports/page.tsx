@@ -53,37 +53,37 @@ export default function ReportsPage() {
         {data && activeTab === 'sale' && (
           <>
             <div className="mb-3 grid grid-cols-3 gap-3">
-              <div className="rounded-lg bg-emerald-50 p-3"><div className="text-xs text-emerald-600">Total Sales</div><div className="text-lg font-bold text-emerald-700">{formatCurrency(data.total || 0, '₹', 0)}</div></div>
-              <div className="rounded-lg bg-slate-50 p-3"><div className="text-xs text-slate-500">Received</div><div className="text-lg font-bold text-slate-700">{formatCurrency((data.total || 0) - (data.balance || 0), '₹', 0)}</div></div>
-              <div className="rounded-lg bg-red-50 p-3"><div className="text-xs text-red-600">Outstanding</div><div className="text-lg font-bold text-red-600">{formatCurrency(data.balance || 0, '₹', 0)}</div></div>
+              <div className="rounded-lg bg-emerald-50 p-3"><div className="text-xs text-emerald-600">Total Sales</div><div className="text-lg font-bold text-emerald-700">{formatCurrency(data.total || 0, 'रू', 0)}</div></div>
+              <div className="rounded-lg bg-slate-50 p-3"><div className="text-xs text-slate-500">Received</div><div className="text-lg font-bold text-slate-700">{formatCurrency((data.total || 0) - (data.balance || 0), 'रू', 0)}</div></div>
+              <div className="rounded-lg bg-red-50 p-3"><div className="text-xs text-red-600">Outstanding</div><div className="text-lg font-bold text-red-600">{formatCurrency(data.balance || 0, 'रू', 0)}</div></div>
             </div>
-            <ReportTable headers={['Invoice', 'Date', 'Party', 'Total', 'Paid', 'Balance', 'Status']} rows={(data.rows || []).map((t: any) => [t.invoice_no, formatDate(t.date), t.party_name, formatCurrency(t.total_amount, '₹', 0), formatCurrency(t.paid_amount, '₹', 0), formatCurrency(t.balance_amount, '₹', 0), t.balance_amount > 0 ? 'Unpaid' : 'Paid'])} />
+            <ReportTable headers={['Invoice', 'Date', 'Party', 'Total', 'Paid', 'Balance', 'Status']} rows={(data.rows || []).map((t: any) => [t.invoice_no, formatDate(t.date), t.party_name, formatCurrency(t.total_amount, 'रू', 0), formatCurrency(t.paid_amount, 'रू', 0), formatCurrency(t.balance_amount, 'रू', 0), t.balance_amount > 0 ? 'Unpaid' : 'Paid'])} />
           </>
         )}
         {data && activeTab === 'purchase' && (
           <>
             <div className="mb-3 grid grid-cols-3 gap-3">
-              <div className="rounded-lg bg-amber-50 p-3"><div className="text-xs text-amber-600">Total Purchases</div><div className="text-lg font-bold text-amber-700">{formatCurrency(data.total || 0, '₹', 0)}</div></div>
-              <div className="rounded-lg bg-slate-50 p-3"><div className="text-xs text-slate-500">Paid</div><div className="text-lg font-bold text-slate-700">{formatCurrency((data.total || 0) - (data.balance || 0), '₹', 0)}</div></div>
-              <div className="rounded-lg bg-red-50 p-3"><div className="text-xs text-red-600">Payable</div><div className="text-lg font-bold text-red-600">{formatCurrency(data.balance || 0, '₹', 0)}</div></div>
+              <div className="rounded-lg bg-amber-50 p-3"><div className="text-xs text-amber-600">Total Purchases</div><div className="text-lg font-bold text-amber-700">{formatCurrency(data.total || 0, 'रू', 0)}</div></div>
+              <div className="rounded-lg bg-slate-50 p-3"><div className="text-xs text-slate-500">Paid</div><div className="text-lg font-bold text-slate-700">{formatCurrency((data.total || 0) - (data.balance || 0), 'रू', 0)}</div></div>
+              <div className="rounded-lg bg-red-50 p-3"><div className="text-xs text-red-600">Payable</div><div className="text-lg font-bold text-red-600">{formatCurrency(data.balance || 0, 'रू', 0)}</div></div>
             </div>
-            <ReportTable headers={['Bill No', 'Date', 'Party', 'Total', 'Paid', 'Balance']} rows={(data.rows || []).map((t: any) => [t.invoice_no, formatDate(t.date), t.party_name, formatCurrency(t.total_amount, '₹', 0), formatCurrency(t.paid_amount, '₹', 0), formatCurrency(t.balance_amount, '₹', 0)])} />
+            <ReportTable headers={['Bill No', 'Date', 'Party', 'Total', 'Paid', 'Balance']} rows={(data.rows || []).map((t: any) => [t.invoice_no, formatDate(t.date), t.party_name, formatCurrency(t.total_amount, 'रू', 0), formatCurrency(t.paid_amount, 'रू', 0), formatCurrency(t.balance_amount, 'रू', 0)])} />
           </>
         )}
         {data && activeTab === 'all' && (
-          <ReportTable headers={['Date', 'Type', 'Invoice', 'Party', 'Amount', 'Balance']} rows={(data.rows || []).map((t: any) => [formatDate(t.date), t.type, t.invoice_no, t.party_name, formatCurrency(t.total_amount, '₹', 0), formatCurrency(t.balance_amount, '₹', 0)])} />
+          <ReportTable headers={['Date', 'Type', 'Invoice', 'Party', 'Amount', 'Balance']} rows={(data.rows || []).map((t: any) => [formatDate(t.date), t.type, t.invoice_no, t.party_name, formatCurrency(t.total_amount, 'रू', 0), formatCurrency(t.balance_amount, 'रू', 0)])} />
         )}
         {data && activeTab === 'pl' && (
           <div className="mx-auto max-w-xl">
             <div className="space-y-2 text-sm">
-              <PLRow label="Sales Revenue" value={data.sales_revenue || 0} positive currency="₹" />
-              <PLRow label="Cost of Purchases" value={-(data.purchase_cost || 0)} positive={false} currency="₹" />
+              <PLRow label="Sales Revenue" value={data.sales_revenue || 0} positive currency="रू" />
+              <PLRow label="Cost of Purchases" value={-(data.purchase_cost || 0)} positive={false} currency="रू" />
               <div className="border-t border-slate-200 py-2" />
-              <PLRow label="Gross Profit" value={data.gross_profit || 0} positive={(data.gross_profit || 0) >= 0} bold currency="₹" />
-              <PLRow label="Total Expenses" value={-(data.expense_total || 0)} positive={false} currency="₹" />
-              <PLRow label="Other Income" value={data.income_total || 0} positive currency="₹" />
+              <PLRow label="Gross Profit" value={data.gross_profit || 0} positive={(data.gross_profit || 0) >= 0} bold currency="रू" />
+              <PLRow label="Total Expenses" value={-(data.expense_total || 0)} positive={false} currency="रू" />
+              <PLRow label="Other Income" value={data.income_total || 0} positive currency="रू" />
               <div className="border-t-2 border-slate-300 py-2" />
-              <PLRow label="Net Profit / Loss" value={data.net_profit || 0} positive={(data.net_profit || 0) >= 0} bold currency="₹" />
+              <PLRow label="Net Profit / Loss" value={data.net_profit || 0} positive={(data.net_profit || 0) >= 0} bold currency="रू" />
             </div>
             <div className="mt-6">
               <h4 className="mb-2 text-sm font-semibold text-slate-700">Breakdown</h4>
@@ -97,7 +97,7 @@ export default function ReportsPage() {
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
                   <XAxis dataKey="name" tick={{ fontSize: 11, fill: '#64748b' }} />
                   <YAxis tick={{ fontSize: 11, fill: '#64748b' }} />
-                  <Tooltip formatter={(v: number) => formatCurrency(v, '₹')} />
+                  <Tooltip formatter={(v: number) => formatCurrency(v, 'रू')} />
                   <Bar dataKey="value" fill="#2563eb" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
@@ -106,23 +106,23 @@ export default function ReportsPage() {
         )}
         {data && activeTab === 'gstr1' && (
           <>
-            <h3 className="mb-1 text-sm font-semibold text-slate-700">GSTR-1 - Outward Supplies (HSN-wise)</h3>
+            <h3 className="mb-1 text-sm font-semibold text-slate-700">VAT/PAN - Outward Supplies (HSN-wise)</h3>
             <p className="mb-3 text-xs text-slate-400">Summary of all sales for the selected period</p>
-            <ReportTable headers={['HSN/SAC', 'Taxable Value', 'CGST', 'SGST', 'IGST', 'Total Tax', 'Invoice Value']}
-              rows={(data.rows || []).map((r: any) => [r.hsn, formatCurrency(r.taxable_value, '₹', 0), formatCurrency(r.cgst, '₹', 0), formatCurrency(r.sgst, '₹', 0), formatCurrency(r.igst, '₹', 0), formatCurrency(r.cgst + r.sgst + r.igst, '₹', 0), formatCurrency(r.total, '₹', 0)])} />
+            <ReportTable headers={['HSN/SAC', 'Taxable Value', 'VAT (13%)', 'SGST', 'IGST', 'Total Tax', 'Invoice Value']}
+              rows={(data.rows || []).map((r: any) => [r.hsn, formatCurrency(r.taxable_value, 'रू', 0), formatCurrency(r.cgst, 'रू', 0), formatCurrency(r.sgst, 'रू', 0), formatCurrency(r.igst, 'रू', 0), formatCurrency(r.cgst + r.sgst + r.igst, 'रू', 0), formatCurrency(r.total, 'रू', 0)])} />
           </>
         )}
         {data && activeTab === 'gstr3b' && (
           <div className="mx-auto max-w-lg space-y-3">
-            <h3 className="text-sm font-semibold text-slate-700">GSTR-3B Summary</h3>
-            <div className="rounded-lg border border-slate-200 p-3"><div className="text-xs font-medium text-slate-500">3.1 Outward Supplies (Taxable Value)</div><div className="text-lg font-bold text-slate-800">{formatCurrency(data.outward_taxable || 0, '₹', 0)}</div><div className="text-xs text-slate-400">Output Tax: {formatCurrency(data.outward_tax || 0, '₹', 0)}</div></div>
-            <div className="rounded-lg border border-slate-200 p-3"><div className="text-xs font-medium text-slate-500">4. Inward Supplies (Taxable Value)</div><div className="text-lg font-bold text-slate-800">{formatCurrency(data.inward_taxable || 0, '₹', 0)}</div><div className="text-xs text-slate-400">Input Tax: {formatCurrency(data.inward_tax || 0, '₹', 0)}</div></div>
-            <div className="rounded-lg border-2 border-vyapar-600 bg-vyapar-50 p-3"><div className="text-xs font-medium text-vyapar-700">Net Tax Payable (Output - Input)</div><div className="text-2xl font-bold text-vyapar-700">{formatCurrency(data.net_tax_payable || 0, '₹', 0)}</div></div>
+            <h3 className="text-sm font-semibold text-slate-700">VAT Summary</h3>
+            <div className="rounded-lg border border-slate-200 p-3"><div className="text-xs font-medium text-slate-500">Outward Supplies (Taxable Value)</div><div className="text-lg font-bold text-slate-800">{formatCurrency(data.outward_taxable || 0, 'रू', 0)}</div><div className="text-xs text-slate-400">Output Tax: {formatCurrency(data.outward_tax || 0, 'रू', 0)}</div></div>
+            <div className="rounded-lg border border-slate-200 p-3"><div className="text-xs font-medium text-slate-500">Inward Supplies (Taxable Value)</div><div className="text-lg font-bold text-slate-800">{formatCurrency(data.inward_taxable || 0, 'रू', 0)}</div><div className="text-xs text-slate-400">Input Tax: {formatCurrency(data.inward_tax || 0, 'रू', 0)}</div></div>
+            <div className="rounded-lg border-2 border-vyapar-600 bg-vyapar-50 p-3"><div className="text-xs font-medium text-vyapar-700">Net Tax Payable (Output - Input)</div><div className="text-2xl font-bold text-vyapar-700">{formatCurrency(data.net_tax_payable || 0, 'रू', 0)}</div></div>
           </div>
         )}
         {data && activeTab === 'stock' && (
           <ReportTable headers={['Item', 'HSN', 'Stock', 'Unit', 'Stock Value', 'Min Stock', 'Status']}
-            rows={(data.rows || []).map((s: any) => [s.name, s.hsn || '-', String(s.stock), s.unit, formatCurrency(s.value, '₹', 0), String(s.min_stock), s.low ? <span className="text-red-500 font-medium">Low Stock</span> : <span className="text-emerald-500">OK</span>])} />
+            rows={(data.rows || []).map((s: any) => [s.name, s.hsn || '-', String(s.stock), s.unit, formatCurrency(s.value, 'रू', 0), String(s.min_stock), s.low ? <span className="text-red-500 font-medium">Low Stock</span> : <span className="text-emerald-500">OK</span>])} />
         )}
       </Card>
     </div>

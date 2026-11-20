@@ -34,7 +34,7 @@ export function TopBar({ title }: { title: string }) {
           </div>
           <div className="hidden md:block">
             <div className="text-xs font-semibold text-slate-700">{business?.name}</div>
-            <div className="text-[10px] text-slate-400">{business?.gstin || 'GST Billing'}</div>
+            <div className="text-[10px] text-slate-400">{business?.gstin || 'PAN Billing'}</div>
           </div>
         </div>
       </div>

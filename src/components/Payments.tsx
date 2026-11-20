@@ -26,7 +26,7 @@ export function Payments({ txnType }: Props) {
   );
   const { data: allTxns } = useSWR<Transaction[]>('/api/transactions/', (url: string) => fetch(url).then((r) => r.json()));
 
-  const cur = business?.currency || '₹';
+  const cur = business?.currency || 'रू';
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({

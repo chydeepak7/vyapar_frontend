@@ -1,6 +1,7 @@
 import type {
   BusinessProfile, Party, Item, Transaction, Expense, OtherIncome,
   BankAccount, Settings, DashboardData, PartyBalance,
+  Category, Unit, Warehouse, OpeningStock,
 } from './types';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || '/api';
@@ -88,6 +89,35 @@ export const api = {
   // Settings
   getSettings: () => fetcher<Settings[]>(`${API_BASE}/settings/`),
   updateSettings: (id: number, data: Partial<Settings>) => send<Settings>(`${API_BASE}/settings/${id}/`, 'PATCH', data),
+
+  // Categories
+  getCategories: () => fetcher<Category[]>(`${API_BASE}/categories/`),
+  createCategory: (data: Partial<Category>) => send<Category>(`${API_BASE}/categories/`, 'POST', data),
+  updateCategory: (id: number, data: Partial<Category>) => send<Category>(`${API_BASE}/categories/${id}/`, 'PATCH', data),
+  deleteCategory: (id: number) => send<void>(`${API_BASE}/categories/${id}/`, 'DELETE'),
+
+  // Units
+  getUnits: () => fetcher<Unit[]>(`${API_BASE}/units/`),
+  createUnit: (data: Partial<Unit>) => send<Unit>(`${API_BASE}/units/`, 'POST', data),
+  updateUnit: (id: number, data: Partial<Unit>) => send<Unit>(`${API_BASE}/units/${id}/`, 'PATCH', data),
+  deleteUnit: (id: number) => send<void>(`${API_BASE}/units/${id}/`, 'DELETE'),
+
+  // Warehouses
+  getWarehouses: () => fetcher<Warehouse[]>(`${API_BASE}/warehouses/`),
+  createWarehouse: (data: Partial<Warehouse>) => send<Warehouse>(`${API_BASE}/warehouses/`, 'POST', data),
+  updateWarehouse: (id: number, data: Partial<Warehouse>) => send<Warehouse>(`${API_BASE}/warehouses/${id}/`, 'PATCH', data),
+  deleteWarehouse: (id: number) => send<void>(`${API_BASE}/warehouses/${id}/`, 'DELETE'),
+
+  // Opening Stock
+  getOpeningStocks: (params?: { item?: number; warehouse?: number }) => {
+    const q = new URLSearchParams();
+    if (params?.item) q.set('item', String(params.item));
+    if (params?.warehouse) q.set('warehouse', String(params.warehouse));
+    return fetcher<OpeningStock[]>(`${API_BASE}/opening-stocks/${q.toString() ? '?' + q : ''}`);
+  },
+  createOpeningStock: (data: Partial<OpeningStock>) => send<OpeningStock>(`${API_BASE}/opening-stocks/`, 'POST', data),
+  updateOpeningStock: (id: number, data: Partial<OpeningStock>) => send<OpeningStock>(`${API_BASE}/opening-stocks/${id}/`, 'PATCH', data),
+  deleteOpeningStock: (id: number) => send<void>(`${API_BASE}/opening-stocks/${id}/`, 'DELETE'),
 
   // Reports
   getReports: (type: string, from_date?: string, to_date?: string) => {

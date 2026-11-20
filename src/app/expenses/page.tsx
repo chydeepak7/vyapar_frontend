@@ -50,7 +50,7 @@ export default function ExpensesPage() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3"><div className="flex items-center gap-1 text-xs text-red-600"><TrendingDown size={12} /> Total Expenses</div><div className="text-lg font-bold text-red-600">{formatCurrency(total, '₹', 0)}</div></div>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3"><div className="flex items-center gap-1 text-xs text-red-600"><TrendingDown size={12} /> Total Expenses</div><div className="text-lg font-bold text-red-600">{formatCurrency(total, 'रू', 0)}</div></div>
         <div className="rounded-lg border border-slate-200 bg-white p-3"><div className="text-xs text-slate-500">Total Entries</div><div className="text-lg font-bold text-slate-800">{expenses?.length || 0}</div></div>
         <div className="rounded-lg border border-slate-200 bg-white p-3"><div className="text-xs text-slate-500">Categories</div><div className="text-lg font-bold text-slate-800">{Object.keys(byCategory).length}</div></div>
       </div>
@@ -77,7 +77,7 @@ export default function ExpensesPage() {
                 <td className="px-4 py-2.5 font-medium text-slate-700">{e.category}</td>
                 <td className="px-4 py-2.5 text-slate-500">{e.note || '-'}</td>
                 <td className="px-4 py-2.5 text-slate-500">{e.payment_type}</td>
-                <td className="px-4 py-2.5 text-right font-medium text-red-500">{formatCurrency(Number(e.amount), '₹', 0)}</td>
+                <td className="px-4 py-2.5 text-right font-medium text-red-500">{formatCurrency(Number(e.amount), 'रू', 0)}</td>
                 <td className="px-4 py-2.5"><div className="flex justify-center gap-2"><button onClick={() => openEdit(e)} className="text-slate-400 hover:text-vyapar-600"><Pencil size={15} /></button><button onClick={() => remove(e.id)} className="text-slate-400 hover:text-red-500"><Trash2 size={15} /></button></div></td>
               </tr>
             ))}

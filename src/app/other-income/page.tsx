@@ -49,7 +49,7 @@ export default function OtherIncomePage() {
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><div className="flex items-center gap-1 text-xs text-emerald-600"><TrendingUp size={12} /> Total Other Income</div><div className="text-lg font-bold text-emerald-600">{formatCurrency(total, '₹', 0)}</div></div>
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><div className="flex items-center gap-1 text-xs text-emerald-600"><TrendingUp size={12} /> Total Other Income</div><div className="text-lg font-bold text-emerald-600">{formatCurrency(total, 'रू', 0)}</div></div>
         <div className="rounded-lg border border-slate-200 bg-white p-3"><div className="text-xs text-slate-500">Total Entries</div><div className="text-lg font-bold text-slate-800">{incomes?.length || 0}</div></div>
         <div className="rounded-lg border border-slate-200 bg-white p-3"><div className="text-xs text-slate-500">Categories</div><div className="text-lg font-bold text-slate-800">{Object.keys(byCategory).length}</div></div>
       </div>
@@ -76,7 +76,7 @@ export default function OtherIncomePage() {
                 <td className="px-4 py-2.5 font-medium text-slate-700">{i.category}</td>
                 <td className="px-4 py-2.5 text-slate-500">{i.note || '-'}</td>
                 <td className="px-4 py-2.5 text-slate-500">{i.payment_type}</td>
-                <td className="px-4 py-2.5 text-right font-medium text-emerald-600">{formatCurrency(Number(i.amount), '₹', 0)}</td>
+                <td className="px-4 py-2.5 text-right font-medium text-emerald-600">{formatCurrency(Number(i.amount), 'रू', 0)}</td>
                 <td className="px-4 py-2.5"><div className="flex justify-center gap-2"><button onClick={() => openEdit(i)} className="text-slate-400 hover:text-vyapar-600"><Pencil size={15} /></button><button onClick={() => remove(i.id)} className="text-slate-400 hover:text-red-500"><Trash2 size={15} /></button></div></td>
               </tr>
             ))}

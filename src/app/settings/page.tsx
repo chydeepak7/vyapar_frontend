@@ -65,13 +65,13 @@ export default function SettingsPage() {
           <div className="col-span-2"><Input label="Business Name" value={bizForm.name || ''} onChange={(e) => setBiz('name', e.target.value)} /></div>
           <Input label="Phone" value={bizForm.phone || ''} onChange={(e) => setBiz('phone', e.target.value)} />
           <Input label="Email" value={bizForm.email || ''} onChange={(e) => setBiz('email', e.target.value)} />
-          <Input label="GSTIN" value={bizForm.gstin || ''} onChange={(e) => setBiz('gstin', e.target.value)} />
-          <Select label="State" value={bizForm.state || ''} onChange={(e) => setBiz('state', e.target.value)}>
-            {['Karnataka', 'Maharashtra', 'Tamil Nadu', 'Delhi', 'Gujarat', 'Telangana', 'West Bengal', 'Uttar Pradesh', 'Rajasthan', 'Kerala', 'Other'].map((s) => <option key={s} value={s}>{s}</option>)}
+          <Input label="PAN" value={bizForm.gstin || ''} onChange={(e) => setBiz('gstin', e.target.value)} />
+          <Select label="Province" value={bizForm.state || ''} onChange={(e) => setBiz('state', e.target.value)}>
+            {['Koshi Province', 'Madhesh Province', 'Bagmati Province', 'Gandaki Province', 'Lumbini Province', 'Karnali Province', 'Sudurpashchim Province'].map((s) => <option key={s} value={s}>{s}</option>)}
           </Select>
           <div className="col-span-2"><Input label="Address" value={bizForm.address || ''} onChange={(e) => setBiz('address', e.target.value)} /></div>
-          <Select label="Currency" value={bizForm.currency || '₹'} onChange={(e) => setBiz('currency', e.target.value)}>
-            <option value="₹">₹ (INR)</option><option value="$">$ (USD)</option><option value="€">€ (EUR)</option>
+          <Select label="Currency" value={bizForm.currency || 'रू'} onChange={(e) => setBiz('currency', e.target.value)}>
+            <option value="रू">रू (NPR)</option><option value="$">$ (USD)</option><option value="€">€ (EUR)</option>
           </Select>
           <Input label="Decimal Places" type="number" value={bizForm.decimal_places ?? 2} onChange={(e) => setBiz('decimal_places', +e.target.value)} />
         </div>

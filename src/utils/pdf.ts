@@ -19,7 +19,7 @@ export function generateInvoicePDF(txn: Transaction, business: BusinessProfile):
   doc.setFont('helvetica', 'normal');
   doc.text(business.address || '', margin, 28);
   doc.text(`Phone: ${business.phone}  |  Email: ${business.email}`, margin, 33);
-  if (business.gstin) doc.text(`GSTIN: ${business.gstin}`, margin, 38);
+  if (business.gstin) doc.text(`PAN: ${business.gstin}`, margin, 38);
 
   // Invoice title
   doc.setFontSize(16);
@@ -73,7 +73,7 @@ export function generateInvoicePDF(txn: Transaction, business: BusinessProfile):
   // Totals
   const labelX = pageWidth - margin - 80;
   const valueX = pageWidth - margin;
-  const cur = business.currency || '₹';
+  const cur = business.currency || 'रू';
 
   const totals: [string, string][] = [['Subtotal', formatCurrency(txn.sub_total, cur)]];
   if (txn.discount_amount > 0) totals.push(['Discount', formatCurrency(txn.discount_amount, cur)]);

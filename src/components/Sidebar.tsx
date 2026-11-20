@@ -6,7 +6,7 @@ import {
   LayoutDashboard, FileText, ShoppingBag, TrendingDown, TrendingUp,
   Wallet, Users, Package, Settings as SettingsIcon, Receipt,
   ArrowDownToLine, ArrowUpFromLine, Undo2, Truck,
-  ClipboardList, BarChart3,
+  ClipboardList, BarChart3, Tag, Ruler, Warehouse, Archive, UserCheck, Building2,
 } from 'lucide-react';
 import { useState } from 'react';
 
@@ -42,7 +42,18 @@ const navSections: NavSection[] = [
   { label: 'Other Income', icon: <TrendingUp size={18} />, path: '/other-income' },
   { label: 'Cash & Bank', icon: <Wallet size={18} />, path: '/cash-bank' },
   { label: 'Parties', icon: <Users size={18} />, path: '/parties' },
+  { label: 'Customers', icon: <UserCheck size={18} />, path: '/customers' },
+  { label: 'Suppliers', icon: <Building2 size={18} />, path: '/suppliers' },
   { label: 'Items', icon: <Package size={18} />, path: '/items' },
+  {
+    label: 'Setup', icon: <SettingsIcon size={18} />,
+    children: [
+      { label: 'Product Categories', path: '/setup/categories', icon: <Tag size={15} /> },
+      { label: 'Units of Measurement', path: '/setup/units', icon: <Ruler size={15} /> },
+      { label: 'Warehouses', path: '/setup/warehouses', icon: <Warehouse size={15} /> },
+      { label: 'Opening Stock', path: '/setup/opening-stock', icon: <Archive size={15} /> },
+    ],
+  },
   { label: 'Settings', icon: <SettingsIcon size={18} />, path: '/settings' },
 ];
 

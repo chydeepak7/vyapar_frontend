@@ -41,7 +41,7 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
   const { data: items } = useSWR<Item[]>('/api/items/', (url: string) => fetch(url).then((r) => r.json()));
   const { data: allTxns } = useSWR<Transaction[]>('/api/transactions/', (url: string) => fetch(url).then((r) => r.json()));
 
-  const cur = business?.currency || '₹';
+  const cur = business?.currency || 'रू';
   const [lines, setLines] = useState<TransactionLine[]>([]);
   const [partyId, setPartyId] = useState<number>(0);
   const [date, setDate] = useState(todayISO());
@@ -219,12 +219,12 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
             <div className="rounded-lg bg-slate-50 px-3 py-2 text-xs text-slate-600">
               <div className="font-medium text-slate-700">{selectedParty.name}</div>
               <div>{selectedParty.phone}</div>
-              {selectedParty.gstin && <div>GSTIN: {selectedParty.gstin}</div>}
+              {selectedParty.gstin && <div>PAN: {selectedParty.gstin}</div>}
               <div>{selectedParty.billing_address}</div>
             </div>
           )}
-          <Select label="State of Supply" value={stateOfSupply} onChange={(e) => setStateOfSupply(e.target.value)}>
-            {['Karnataka', 'Maharashtra', 'Tamil Nadu', 'Delhi', 'Gujarat', 'Telangana', 'West Bengal', 'Uttar Pradesh', 'Rajasthan', 'Kerala', 'Other'].map((s) => <option key={s} value={s}>{s}</option>)}
+          <Select label="Province" value={stateOfSupply} onChange={(e) => setStateOfSupply(e.target.value)}>
+            {['Koshi Province', 'Madhesh Province', 'Bagmati Province', 'Gandaki Province', 'Lumbini Province', 'Karnali Province', 'Sudurpashchim Province'].map((s) => <option key={s} value={s}>{s}</option>)}
           </Select>
         </div>
         <div className="mt-3 flex items-center gap-4">

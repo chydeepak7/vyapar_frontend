@@ -27,7 +27,7 @@ export function TransactionList({ txnType, title, createPath, editPathBase }: Pr
   );
   const [search, setSearch] = useState('');
 
-  const cur = (business as BusinessProfile | undefined)?.currency || '₹';
+  const cur = (business as BusinessProfile | undefined)?.currency || 'रू';
 
   const filtered = (transactions || []).filter((t) => {
     if (!search) return true;

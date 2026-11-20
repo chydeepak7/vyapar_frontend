@@ -13,7 +13,7 @@ import type { Party, PartyType, PartyBalance } from '@/lib/types';
 const emptyParty: Omit<Party, 'id' | 'created_at'> = {
   name: '', type: 'Customer', phone: '', email: '', gstin: '',
   billing_address: '', shipping_address: '', opening_balance: 0,
-  balance_type: 'To Receive', group: '',
+  balance_type: 'To Receive', group: '', credit_limit: 0, payment_terms: '',
 };
 
 export default function PartiesPage() {
@@ -57,8 +57,8 @@ export default function PartiesPage() {
     <div className="space-y-4">
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-lg border border-slate-200 bg-white p-3"><div className="flex items-center gap-1 text-xs text-slate-500"><Users size={12} /> Total Parties</div><div className="text-lg font-bold text-slate-800">{parties?.length || 0}</div></div>
-        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><div className="flex items-center gap-1 text-xs text-emerald-600"><ArrowDownCircle size={12} /> Total Receivable</div><div className="text-lg font-bold text-emerald-700">{formatCurrency(totalReceivable, '₹', 0)}</div></div>
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3"><div className="flex items-center gap-1 text-xs text-red-600"><ArrowUpCircle size={12} /> Total Payable</div><div className="text-lg font-bold text-red-600">{formatCurrency(totalPayable, '₹', 0)}</div></div>
+        <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-3"><div className="flex items-center gap-1 text-xs text-emerald-600"><ArrowDownCircle size={12} /> Total Receivable</div><div className="text-lg font-bold text-emerald-700">{formatCurrency(totalReceivable, 'रू', 0)}</div></div>
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3"><div className="flex items-center gap-1 text-xs text-red-600"><ArrowUpCircle size={12} /> Total Payable</div><div className="text-lg font-bold text-red-600">{formatCurrency(totalPayable, 'रू', 0)}</div></div>
       </div>
 
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -101,8 +101,8 @@ export default function PartiesPage() {
                   <td className="px-4 py-2.5 text-slate-500">{b.phone || '-'}</td>
                   <td className="px-4 py-2.5 text-slate-500">{b.gstin || '-'}</td>
                   <td className="px-4 py-2.5 text-slate-500">{b.group || '-'}</td>
-                  <td className="px-4 py-2.5 text-right">{b.receivable > 0 ? <span className="font-medium text-emerald-600">{formatCurrency(b.receivable, '₹', 0)}</span> : <span className="text-slate-300">-</span>}</td>
-                  <td className="px-4 py-2.5 text-right">{b.payable > 0 ? <span className="font-medium text-red-500">{formatCurrency(b.payable, '₹', 0)}</span> : <span className="text-slate-300">-</span>}</td>
+                  <td className="px-4 py-2.5 text-right">{b.receivable > 0 ? <span className="font-medium text-emerald-600">{formatCurrency(b.receivable, 'रू', 0)}</span> : <span className="text-slate-300">-</span>}</td>
+                  <td className="px-4 py-2.5 text-right">{b.payable > 0 ? <span className="font-medium text-red-500">{formatCurrency(b.payable, 'रू', 0)}</span> : <span className="text-slate-300">-</span>}</td>
                   <td className="px-4 py-2.5">
                     <div className="flex justify-center gap-2">
                       {party && <button onClick={() => openEdit(party)} className="text-slate-400 hover:text-vyapar-600"><Pencil size={15} /></button>}
@@ -129,6 +129,8 @@ export default function PartiesPage() {
           <Input label="Group" value={form.group} onChange={(e) => set('group', e.target.value)} placeholder="e.g. Wholesale" />
           <Input label="Opening Balance" type="number" value={form.opening_balance} onChange={(e) => set('opening_balance', +e.target.value)} />
           <Select label="Balance Type" value={form.balance_type} onChange={(e) => set('balance_type', e.target.value)}><option value="To Receive">To Receive</option><option value="To Pay">To Pay</option></Select>
+          <Input label="Credit Limit" type="number" value={form.credit_limit} onChange={(e) => set('credit_limit', +e.target.value)} />
+          <Input label="Payment Terms" value={form.payment_terms} onChange={(e) => set('payment_terms', e.target.value)} placeholder="e.g. Net 30" />
         </div>
       </Modal>
     </div>
