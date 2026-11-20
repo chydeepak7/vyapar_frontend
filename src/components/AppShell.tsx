@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -36,18 +36,19 @@ function getTitle(pathname: string): string {
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { user, isLoading } = useAuth();
 
   const isLoginPage = pathname === '/login';
 
   useEffect(() => {
-    if (!isLoading && !user && !isLoginPage) {
-      window.location.href = '/login';
+    if (isLoading) return;
+    if (isLoginPage && user) {
+      router.replace('/');
+    } else if (!isLoginPage && !user) {
+      router.replace('/login');
     }
-    if (!isLoading && user && isLoginPage) {
-      window.location.href = '/';
-    }
-  }, [isLoading, user, isLoginPage]);
+  }, [isLoading, user, isLoginPage, router]);
 
   // Login page renders without sidebar/topbar
   if (isLoginPage) {
@@ -55,22 +56,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   // Show loading while checking auth
-  if (isLoading) {
+  if (isLoading || !user) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
         <div className="text-center">
           <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-vyapar-600" />
           <p className="text-sm text-slate-400">Loading...</p>
         </div>
-      </div>
-    );
-  }
-
-  // Not authenticated — will redirect via useEffect
-  if (!user) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-slate-50">
-        <p className="text-sm text-slate-400">Redirecting to login...</p>
       </div>
     );
   }
