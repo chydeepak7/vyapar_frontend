@@ -111,7 +111,7 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
     const rate = txnType === 'PurchaseBill' ? newItem.purchase_price : newItem.sale_price;
     setLines((prev) => [...prev, {
       item: newItem.id, item_name: newItem.name, hsn: newItem.hsn,
-      qty: 1, free_qty: 0, unit: newItem.unit, rate,
+      qty: 1, free_qty: 0, unit: newItem.unit_name, rate,
       discount_percent: 0, gst_rate: isGst ? newItem.gst_rate : 0, amount: rate,
     }]);
   };
@@ -134,7 +134,7 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
       const rate = txnType === 'PurchaseBill' ? item.purchase_price : item.sale_price;
       const line: TransactionLine = {
         ...updated[index], item: item.id, item_name: item.name,
-        hsn: item.hsn, unit: item.unit, rate, gst_rate: isGst ? item.gst_rate : 0,
+        hsn: item.hsn, unit: item.unit_name, rate, gst_rate: isGst ? item.gst_rate : 0,
       };
       line.amount = calcLine(line).amount;
       updated[index] = line;
