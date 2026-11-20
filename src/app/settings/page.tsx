@@ -70,8 +70,8 @@ export default function SettingsPage() {
   if (!business || !settings) {
     return (
       <div className="text-center py-10 space-y-3">
-        <p className="text-slate-400 text-sm">No settings data found. This usually means the database hasn&apos;t been seeded yet.</p>
-        <Button onClick={() => { mutateBiz(); mutateSet(); }}>Refresh</Button>
+        <div className="mx-auto mb-3 h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-vyapar-600" />
+        <p className="text-slate-400 text-sm">Setting up your account...</p>
       </div>
     );
   }

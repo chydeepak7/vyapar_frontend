@@ -71,14 +71,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadUser]);
 
   const login = async (username: string, password: string) => {
-    const res = await fetch(`${API_BASE}/auth/token/`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password }),
-    });
+    let res: Response;
+    try {
+      res = await fetch(`${API_BASE}/auth/token/`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
+      });
+    } catch {
+      throw new Error('Cannot reach the server. Make sure the backend is running on http://localhost:8000');
+    }
     if (!res.ok) {
       const data = await res.json().catch(() => ({}));
-      throw new Error(data.detail || 'Invalid username or password');
+      throw new Error(data.detail || `Login failed (HTTP ${res.status})`);
     }
     const { access, refresh } = await res.json();
     localStorage.setItem('access_token', access);
