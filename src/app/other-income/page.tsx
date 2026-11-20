@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, TextArea } from '@/components/ui/Input';
 import { formatCurrency, formatDate, todayISO } from '@/utils/format';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/config';
 import { Plus, Search, Trash2, Pencil, TrendingUp } from 'lucide-react';
 import type { OtherIncome as OtherIncomeType, PaymentType } from '@/lib/types';
 
@@ -15,7 +16,7 @@ const emptyIncome: Omit<OtherIncomeType, 'id' | 'created_at'> = {
 };
 
 export default function OtherIncomePage() {
-  const { data: incomes, mutate } = useSWR<OtherIncomeType[]>('/api/other-incomes/', (url: string) => fetch(url).then((r) => r.json()));
+  const { data: incomes, mutate } = useSWR<OtherIncomeType[]>(`${API_BASE}/other-incomes/`, (url: string) => fetch(url).then((r) => r.json()));
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<OtherIncomeType | null>(null);
@@ -40,7 +41,7 @@ export default function OtherIncomePage() {
     else await api.createOtherIncome(form);
     setModalOpen(false);
     mutate();
-    globalMutate('/api/dashboard/');
+    globalMutate(`${API_BASE}/dashboard/`);
   };
 
   const remove = async (id: number) => { if (!confirm('Delete this income record?')) return; await api.deleteOtherIncome(id); mutate(); };

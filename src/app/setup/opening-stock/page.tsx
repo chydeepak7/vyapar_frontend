@@ -24,15 +24,15 @@ const empty = {
 
 export default function OpeningStockPage() {
   const { data: stocks, mutate } = useSWR<OpeningStock[]>(
-    '/api/opening-stocks/',
+    `${API_BASE}/opening-stocks/`,
     (url: string) => fetch(url).then((r) => r.json()),
   );
   const { data: items } = useSWR<Item[]>(
-    '/api/items/',
+    `${API_BASE}/items/`,
     (url: string) => fetch(url).then((r) => r.json()),
   );
   const { data: warehouses } = useSWR<Warehouse[]>(
-    '/api/warehouses/',
+    `${API_BASE}/warehouses/`,
     (url: string) => fetch(url).then((r) => r.json()),
   );
 
@@ -70,14 +70,14 @@ export default function OpeningStockPage() {
     }
     setModalOpen(false);
     mutate();
-    globalMutate('/api/items/');
+    globalMutate(`${API_BASE}/items/`);
   };
 
   const remove = async (id: number) => {
     if (!confirm('Delete this opening stock entry? This will reduce item stock.')) return;
     await api.deleteOpeningStock(id);
     mutate();
-    globalMutate('/api/items/');
+    globalMutate(`${API_BASE}/items/`);
   };
 
   const setF = (field: string, value: string | number | null) =>

@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, TextArea } from '@/components/ui/Input';
 import { formatCurrency } from '@/utils/format';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/config';
 import { Plus, Search, Pencil, Trash2, Package, AlertTriangle } from 'lucide-react';
 import type { Item, Category, Unit } from '@/lib/types';
 
@@ -19,15 +20,15 @@ const emptyItem = {
 
 export default function ItemsPage() {
   const { data: items, mutate } = useSWR<Item[]>(
-    '/api/items/',
+    `${API_BASE}/items/`,
     (url: string) => fetch(url).then((r) => r.json()),
   );
   const { data: categories } = useSWR<Category[]>(
-    '/api/categories/',
+    `${API_BASE}/categories/`,
     (url: string) => fetch(url).then((r) => r.json()),
   );
   const { data: units } = useSWR<Unit[]>(
-    '/api/units/',
+    `${API_BASE}/units/`,
     (url: string) => fetch(url).then((r) => r.json()),
   );
 
@@ -77,7 +78,7 @@ export default function ItemsPage() {
     else await api.createItem(form);
     setModalOpen(false);
     mutate();
-    globalMutate('/api/dashboard/');
+    globalMutate(`${API_BASE}/dashboard/`);
   };
 
   const remove = async (id: number) => {

@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, TextArea } from '@/components/ui/Input';
 import { formatCurrency, formatDate, todayISO } from '@/utils/format';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/config';
 import { Plus, Search, Trash2, Pencil, TrendingDown } from 'lucide-react';
 import type { Expense, PaymentType } from '@/lib/types';
 
@@ -16,7 +17,7 @@ const emptyExpense: Omit<Expense, 'id' | 'created_at'> = {
 };
 
 export default function ExpensesPage() {
-  const { data: expenses, mutate } = useSWR<Expense[]>('/api/expenses/', (url: string) => fetch(url).then((r) => r.json()));
+  const { data: expenses, mutate } = useSWR<Expense[]>(`${API_BASE}/expenses/`, (url: string) => fetch(url).then((r) => r.json()));
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
@@ -41,7 +42,7 @@ export default function ExpensesPage() {
     else await api.createExpense(form);
     setModalOpen(false);
     mutate();
-    globalMutate('/api/dashboard/');
+    globalMutate(`${API_BASE}/dashboard/`);
   };
 
   const remove = async (id: number) => { if (!confirm('Delete this expense?')) return; await api.deleteExpense(id); mutate(); };

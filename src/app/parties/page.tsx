@@ -7,6 +7,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select } from '@/components/ui/Input';
 import { formatCurrency } from '@/utils/format';
 import { api } from '@/lib/api';
+import { API_BASE } from '@/lib/config';
 import { Plus, Search, Pencil, Trash2, Users, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import type { Party, PartyType, PartyBalance } from '@/lib/types';
 
@@ -17,8 +18,8 @@ const emptyParty: Omit<Party, 'id' | 'created_at'> = {
 };
 
 export default function PartiesPage() {
-  const { data: parties } = useSWR<Party[]>('/api/parties/', (url: string) => fetch(url).then((r) => r.json()));
-  const { data: balances, mutate } = useSWR<PartyBalance[]>('/api/party-balances/', (url: string) => fetch(url).then((r) => r.json()));
+  const { data: parties } = useSWR<Party[]>(`${API_BASE}/parties/`, (url: string) => fetch(url).then((r) => r.json()));
+  const { data: balances, mutate } = useSWR<PartyBalance[]>(`${API_BASE}/party-balances/`, (url: string) => fetch(url).then((r) => r.json()));
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<'All' | PartyType>('All');
   const [modalOpen, setModalOpen] = useState(false);
@@ -42,7 +43,7 @@ export default function PartiesPage() {
     else await api.createParty(form);
     setModalOpen(false);
     mutate();
-    globalMutate('/api/party-balances/');
+    globalMutate(`${API_BASE}/party-balances/`);
   };
 
   const remove = async (id: number) => {
