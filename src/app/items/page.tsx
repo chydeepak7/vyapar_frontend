@@ -9,19 +9,27 @@ import { formatCurrency } from '@/utils/format';
 import { api } from '@/lib/api';
 import { API_BASE } from '@/lib/config';
 import { Plus, Search, Pencil, Trash2, Package, AlertTriangle, X } from 'lucide-react';
-import type { Item, Category, Unit, ItemUnitConversion } from '@/lib/types';
+import type { Item, Category, Unit } from '@/lib/types';
+import { largestConversion, splitByFactor, stockPair, stockPairLabel, trimQty, type ConvRow } from '@/utils/stockUnits';
 
 const emptyItem = {
   name: '', category: null as number | null, category_name: '',
   hsn: '', unit: null as number | null, unit_name: '',
   sale_price: 0, purchase_price: 0, gst_rate: 0,
   stock: 0, min_stock: 0, barcode: '', description: '', mrp: 0,
-  unit_conversions: [] as ItemUnitConversion[],
+  unit_conversions: [] as ConvRow[],
 };
 
-const emptyConversion: ItemUnitConversion = {
-  unit_name: '', conversion_factor: 1, purchase_price: 0, sale_price: 0,
+const emptyConversion: ConvRow = {
+  unit_id: null, unit_name: '', conversion_factor: 1,
 };
+
+function matchUnit(units: Unit[] | undefined, name: string) {
+  const key = name.trim().toLowerCase();
+  return (units || []).find(
+    (u) => u.short_name.toLowerCase() === key || u.name.toLowerCase() === key,
+  );
+}
 
 export default function ItemsPage() {
   const { data: items, mutate } = useSWR<Item[]>(`${API_BASE}/items/`);
@@ -49,30 +57,110 @@ export default function ItemsPage() {
   const openAdd = () => { setEditing(null); setForm(emptyItem); setModalOpen(true); };
   const openEdit = (item: Item) => {
     setEditing(item);
-    setForm({
-      name: item.name,
-      category: item.category,
-      category_name: item.category_name,
-      hsn: item.hsn,
-      unit: item.unit,
-      unit_name: item.unit_name,
-      sale_price: item.sale_price,
-      purchase_price: item.purchase_price,
-      gst_rate: item.gst_rate,
-      stock: item.stock,
-      min_stock: item.min_stock,
-      barcode: item.barcode || '',
-      description: item.description || '',
-      mrp: item.mrp,
-      unit_conversions: (item.unit_conversions || []).map((c) => ({ ...c })),
-    });
+    const convs = item.unit_conversions || [];
+    const primary = largestConversion(convs);
+    if (!primary) {
+      setForm({
+        name: item.name,
+        category: item.category,
+        category_name: item.category_name,
+        hsn: item.hsn,
+        unit: item.unit,
+        unit_name: item.unit_name,
+        sale_price: Number(item.sale_price) || 0,
+        purchase_price: Number(item.purchase_price) || 0,
+        gst_rate: item.gst_rate,
+        stock: Number(item.stock) || 0,
+        min_stock: Number(item.min_stock) || 0,
+        barcode: item.barcode || '',
+        description: item.description || '',
+        mrp: item.mrp,
+        unit_conversions: [],
+      });
+    } else {
+      const purchase = matchUnit(units, primary.unit_name);
+      const primaryFactor = Number(primary.conversion_factor) || 1;
+      const otherRows: ConvRow[] = convs
+        .filter((c) => c !== primary)
+        .map((c) => {
+          const linked = matchUnit(units, c.unit_name);
+          const perThis = Number(c.conversion_factor) || 1;
+          return {
+            unit_id: linked?.id ?? null,
+            unit_name: c.unit_name,
+            conversion_factor: primaryFactor / perThis,
+          };
+        });
+      setForm({
+        name: item.name,
+        category: item.category,
+        category_name: item.category_name,
+        hsn: item.hsn,
+        unit: purchase?.id ?? null,
+        unit_name: primary.unit_name,
+        sale_price: Number(primary.sale_price) || Number(item.sale_price) * primaryFactor,
+        purchase_price: Number(primary.purchase_price) || Number(item.purchase_price) * primaryFactor,
+        gst_rate: item.gst_rate,
+        stock: Number(item.stock) || 0,
+        min_stock: Number(item.min_stock) || 0,
+        barcode: item.barcode || '',
+        description: item.description || '',
+        mrp: item.mrp,
+        unit_conversions: [
+          {
+            unit_id: item.unit,
+            unit_name: item.unit_name,
+            conversion_factor: primaryFactor,
+          },
+          ...otherRows,
+        ],
+      });
+    }
     setModalOpen(true);
   };
 
   const save = async () => {
     if (!form.name.trim()) return;
-    if (editing) await api.updateItem(editing.id, form as any);
-    else await api.createItem(form as any);
+    if (form.unit_conversions.some((r) => !r.unit_name)) {
+      alert('Select an existing unit on each conversion row.');
+      return;
+    }
+    const rows = form.unit_conversions.filter((r) => r.unit_name && r.conversion_factor > 0);
+    const payload: Record<string, unknown> = { ...form };
+    if (rows.length === 0) {
+      payload.unit_conversions = [];
+    } else {
+      if (!form.unit_name) {
+        alert('Select the unit you buy in first, for example Darzon.');
+        return;
+      }
+      const stockUnit = rows[0];
+      const factor = Number(stockUnit.conversion_factor);
+      payload.unit = stockUnit.unit_id;
+      payload.unit_name = stockUnit.unit_name;
+      payload.sale_price = factor ? Number(form.sale_price) / factor : form.sale_price;
+      payload.purchase_price = factor ? Number(form.purchase_price) / factor : form.purchase_price;
+      payload.unit_conversions = [
+        {
+          unit_name: form.unit_name,
+          conversion_factor: factor,
+          sale_price: form.sale_price,
+          purchase_price: form.purchase_price,
+        },
+        ...rows.slice(1).map((r) => {
+          const perPurchase = Number(r.conversion_factor);
+          const piecesEach = perPurchase ? factor / perPurchase : factor;
+          return {
+            unit_name: r.unit_name,
+            conversion_factor: piecesEach,
+            sale_price: perPurchase ? Number(form.sale_price) / perPurchase : 0,
+            purchase_price: perPurchase ? Number(form.purchase_price) / perPurchase : 0,
+          };
+        }),
+      ];
+    }
+    if (editing) await api.updateItem(editing.id, payload as Partial<Item>);
+    else await api.createItem(payload as Partial<Item>);
     setModalOpen(false);
     mutate();
     globalMutate(`${API_BASE}/dashboard/`);
@@ -105,41 +193,36 @@ export default function ItemsPage() {
     setForm((p) => ({ ...p, unit_conversions: [...p.unit_conversions, { ...emptyConversion }] }));
 
   const removeConversion = (idx: number) =>
-    setForm((p) => ({ ...p, unit_conversions: p.unit_conversions.filter((_, i) => i !== idx) }));
+    setForm((p) => {
+      const row = p.unit_conversions[idx];
+      const next = p.unit_conversions.filter((_, i) => i !== idx);
+      if (idx === 0 && p.unit_conversions.length === 1 && row.conversion_factor > 0) {
+        return {
+          ...p,
+          stock: p.stock / row.conversion_factor,
+          min_stock: p.min_stock / row.conversion_factor,
+          unit_conversions: next,
+        };
+      }
+      return { ...p, unit_conversions: next };
+    });
 
-  const updateConversion = (idx: number, field: keyof ItemUnitConversion, value: string | number) =>
+  const updateConversion = (idx: number, patch: Partial<ConvRow>) =>
     setForm((p) => {
       const updated = [...p.unit_conversions];
-      updated[idx] = { ...updated[idx], [field]: value };
-
-      // Auto-calculate purchase/sale price when conversion_factor changes
-      if (field === 'conversion_factor') {
-        const f = Number(value);
-        if (f > 0) {
-          if (p.purchase_price > 0 && updated[idx].purchase_price === 0)
-            updated[idx].purchase_price = +(p.purchase_price * f).toFixed(2);
-          if (p.sale_price > 0 && updated[idx].sale_price === 0)
-            updated[idx].sale_price = +(p.sale_price * f).toFixed(2);
-        }
-      }
+      updated[idx] = { ...updated[idx], ...patch };
       return { ...p, unit_conversions: updated };
     });
 
-  // Auto-fill conversion prices when base price changes
   const handlePriceChange = (field: 'purchase_price' | 'sale_price', value: number) => {
-    setForm((p) => ({
-      ...p,
-      [field]: value,
-      unit_conversions: p.unit_conversions.map((c) => {
-        const autoPrice = +(value * c.conversion_factor).toFixed(2);
-        return {
-          ...c,
-          // Only auto-fill if the conversion price is still 0 (untouched)
-          [field]: c[field] === 0 ? autoPrice : c[field],
-        };
-      }),
-    }));
+    setForm((p) => ({ ...p, [field]: value }));
   };
+
+  const stockUnitName = form.unit_conversions[0]?.unit_name || '';
+  const stockFactor = Number(form.unit_conversions[0]?.conversion_factor) || 0;
+  const formPair = stockUnitName && stockFactor > 0
+    ? splitByFactor(Number(form.stock) || 0, stockFactor)
+    : null;
 
   return (
     <div className="space-y-4">
@@ -212,13 +295,15 @@ export default function ItemsPage() {
                 <td className="px-4 py-2.5 font-medium text-slate-700">{item.name}</td>
                 <td className="px-4 py-2.5 text-slate-500">{item.category_name || '—'}</td>
                 <td className="px-4 py-2.5 text-slate-500">{item.hsn || '—'}</td>
-                <td className="px-4 py-2.5 text-slate-500">{item.unit_name || '—'}</td>
+                <td className="px-4 py-2.5 text-slate-500">
+                  {stockPair(item)?.wholeUnit || item.unit_name || '—'}
+                </td>
                 <td className="px-4 py-2.5">
                   {(item.unit_conversions || []).length > 0 ? (
                     <div className="flex flex-wrap gap-1">
                       {(item.unit_conversions || []).map((c, i) => (
                         <span key={i} className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-600">
-                          {c.unit_name} ×{c.conversion_factor}
+                          1 {c.unit_name} = {trimQty(Number(c.conversion_factor))} {item.unit_name || 'pcs'}
                         </span>
                       ))}
                     </div>
@@ -226,12 +311,24 @@ export default function ItemsPage() {
                     <span className="text-slate-300 text-xs">—</span>
                   )}
                 </td>
-                <td className="px-4 py-2.5 text-right text-slate-700">{formatCurrency(item.sale_price)}</td>
-                <td className="px-4 py-2.5 text-right text-slate-500">{formatCurrency(item.purchase_price)}</td>
+                <td className="px-4 py-2.5 text-right text-slate-700">
+                  {formatCurrency(
+                    largestConversion(item.unit_conversions)
+                      ? Number(largestConversion(item.unit_conversions)?.sale_price) || Number(item.sale_price) * Number(largestConversion(item.unit_conversions)?.conversion_factor)
+                      : item.sale_price,
+                  )}
+                </td>
+                <td className="px-4 py-2.5 text-right text-slate-500">
+                  {formatCurrency(
+                    largestConversion(item.unit_conversions)
+                      ? Number(largestConversion(item.unit_conversions)?.purchase_price) || Number(item.purchase_price) * Number(largestConversion(item.unit_conversions)?.conversion_factor)
+                      : item.purchase_price,
+                  )}
+                </td>
                 <td className="px-4 py-2.5 text-right text-slate-500">{item.gst_rate}%</td>
                 <td className="px-4 py-2.5 text-right">
                   <span className={item.stock <= item.min_stock ? 'font-semibold text-red-500' : 'text-slate-700'}>
-                    {item.stock}
+                    {stockPairLabel(item) || trimQty(Number(item.stock))}
                   </span>
                 </td>
                 <td className="px-4 py-2.5">
@@ -283,7 +380,7 @@ export default function ItemsPage() {
           <Input label="HSN/SAC Code" value={form.hsn} onChange={(e) => set('hsn', e.target.value)} placeholder="e.g. 2523" />
 
           <div>
-            <label className="mb-1 block text-xs font-medium text-slate-600">Base Unit</label>
+            <label className="mb-1 block text-xs font-medium text-slate-600">Unit you buy in</label>
             <select
               value={form.unit ?? ''}
               onChange={(e) => handleUnitChange(e.target.value)}
@@ -291,114 +388,114 @@ export default function ItemsPage() {
             >
               <option value="">Select unit...</option>
               {(units || []).map((u) => <option key={u.id} value={u.id}>{u.short_name} – {u.name}</option>)}
+              {form.unit_name && !(units || []).some((u) => u.id === form.unit) && (
+                <option value={form.unit ?? ''}>{form.unit_name}</option>
+              )}
             </select>
           </div>
 
           <Input label="GST Rate (%)" type="number" value={form.gst_rate} onChange={(e) => set('gst_rate', +e.target.value)} />
           <Input
-            label="Sale Price (per base unit)"
+            label={`Sale Price (per ${form.unit_name || 'unit'})`}
             type="number" value={form.sale_price}
             onChange={(e) => handlePriceChange('sale_price', +e.target.value)}
           />
           <Input
-            label="Purchase Price (per base unit)"
+            label={`Purchase Price (per ${form.unit_name || 'unit'})`}
             type="number" value={form.purchase_price}
             onChange={(e) => handlePriceChange('purchase_price', +e.target.value)}
           />
           <Input label="MRP" type="number" value={form.mrp} onChange={(e) => set('mrp', +e.target.value)} />
-          <Input label="Opening Stock" type="number" value={form.stock} onChange={(e) => set('stock', +e.target.value)} />
-          <Input label="Minimum Stock" type="number" value={form.min_stock} onChange={(e) => set('min_stock', +e.target.value)} />
+          <Input
+            label={stockUnitName ? `Stock in ${stockUnitName}` : `Opening Stock${form.unit_name ? ` (${form.unit_name})` : ''}`}
+            type="number" value={form.stock} onChange={(e) => set('stock', +e.target.value)}
+          />
+          <Input
+            label={stockUnitName ? `Minimum Stock in ${stockUnitName}` : 'Minimum Stock'}
+            type="number" value={form.min_stock} onChange={(e) => set('min_stock', +e.target.value)}
+          />
           <Input label="Barcode" value={form.barcode} onChange={(e) => set('barcode', e.target.value)} />
           <div className="col-span-2">
             <TextArea label="Description" rows={2} value={form.description} onChange={(e) => set('description', e.target.value)} />
           </div>
 
-          {/* ── Alternate Unit Conversions ─────────────────────────── */}
           <div className="col-span-2 rounded-xl border border-blue-100 bg-blue-50 p-3">
             <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2 text-xs font-semibold text-blue-700">
-                <span>📦</span> Alternate Unit Conversions
-                <span className="font-normal text-blue-500">(optional — e.g. Carton, Box, Dozen)</span>
+              <div className="text-xs font-semibold text-blue-700">
+                Convert {form.unit_name || 'this unit'} into an existing unit
               </div>
               <button
                 type="button"
                 onClick={addConversion}
                 className="flex items-center gap-1 rounded-lg bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-700"
               >
-                <Plus size={12} /> Add Unit
+                <Plus size={12} /> Add conversion
               </button>
             </div>
 
             {form.unit_conversions.length === 0 && (
-              <p className="text-center text-xs text-blue-400 py-2">
-                No alternate units. Click &quot;Add Unit&quot; to define e.g. 1 Carton = 12 {form.unit_name || 'pcs'}.
+              <p className="py-2 text-center text-xs text-blue-400">
+                Example: unit is Darzon, then set 1 Darzon = 12 Piece. Piece must already exist under Setup → Units.
               </p>
             )}
 
             {form.unit_conversions.map((conv, idx) => (
-              <div key={idx} className="mb-2 grid grid-cols-12 gap-2 items-end rounded-lg bg-white border border-blue-100 p-2">
-                {/* Unit name */}
-                <div className="col-span-3">
-                  <label className="mb-0.5 block text-[10px] font-medium text-slate-500">Unit Name</label>
-                  <input
-                    value={conv.unit_name}
-                    onChange={(e) => updateConversion(idx, 'unit_name', e.target.value)}
-                    placeholder="e.g. Carton"
-                    className="w-full rounded border border-slate-200 px-2 py-1 text-sm outline-none focus:border-blue-400"
-                  />
+              <div key={idx} className="mb-2 flex flex-wrap items-end gap-2 rounded-lg border border-blue-100 bg-white p-2">
+                <div className="pb-1 text-xs font-medium text-slate-600">
+                  1 {form.unit_name || 'unit'} =
                 </div>
-                {/* Conversion factor */}
-                <div className="col-span-2">
-                  <label className="mb-0.5 block text-[10px] font-medium text-slate-500">
-                    = ? {form.unit_name || 'pcs'}
-                  </label>
+                <div>
+                  <label className="mb-0.5 block text-[10px] font-medium text-slate-500">How many</label>
                   <input
                     type="number" min={0.0001} step="any"
                     value={conv.conversion_factor}
-                    onChange={(e) => updateConversion(idx, 'conversion_factor', +e.target.value)}
-                    className="w-full rounded border border-slate-200 px-2 py-1 text-sm text-right outline-none focus:border-blue-400"
+                    onChange={(e) => updateConversion(idx, { conversion_factor: +e.target.value })}
+                    className="w-24 rounded border border-slate-200 px-2 py-1 text-right text-sm outline-none focus:border-blue-400"
                   />
                 </div>
-                {/* Purchase price */}
-                <div className="col-span-3">
-                  <label className="mb-0.5 block text-[10px] font-medium text-slate-500">Purchase Price / {conv.unit_name || 'unit'}</label>
-                  <input
-                    type="number" min={0} step="any"
-                    value={conv.purchase_price}
-                    onChange={(e) => updateConversion(idx, 'purchase_price', +e.target.value)}
-                    className="w-full rounded border border-slate-200 px-2 py-1 text-sm text-right outline-none focus:border-blue-400"
-                  />
-                </div>
-                {/* Sale price */}
-                <div className="col-span-3">
-                  <label className="mb-0.5 block text-[10px] font-medium text-slate-500">Sale Price / {conv.unit_name || 'unit'}</label>
-                  <input
-                    type="number" min={0} step="any"
-                    value={conv.sale_price}
-                    onChange={(e) => updateConversion(idx, 'sale_price', +e.target.value)}
-                    className="w-full rounded border border-slate-200 px-2 py-1 text-sm text-right outline-none focus:border-blue-400"
-                  />
-                </div>
-                {/* Remove */}
-                <div className="col-span-1 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => removeConversion(idx)}
-                    className="rounded p-1 text-slate-300 hover:bg-red-50 hover:text-red-500"
+                <div className="min-w-[160px] flex-1">
+                  <label className="mb-0.5 block text-[10px] font-medium text-slate-500">Existing unit</label>
+                  <select
+                    value={conv.unit_id ?? ''}
+                    onChange={(e) => {
+                      const id = e.target.value ? Number(e.target.value) : null;
+                      const u = (units || []).find((x) => x.id === id);
+                      updateConversion(idx, { unit_id: id, unit_name: u?.short_name || '' });
+                    }}
+                    className="w-full rounded border border-slate-200 px-2 py-1 text-sm outline-none focus:border-blue-400"
                   >
-                    <X size={14} />
-                  </button>
+                    <option value="">Select unit...</option>
+                    {(units || [])
+                      .filter((u) => u.id !== form.unit && !form.unit_conversions.some((row, i) => i !== idx && row.unit_id === u.id))
+                      .map((u) => <option key={u.id} value={u.id}>{u.short_name} – {u.name}</option>)}
+                    {conv.unit_name && !(units || []).some((u) => u.id === conv.unit_id) && (
+                      <option value={conv.unit_id ?? ''}>{conv.unit_name}</option>
+                    )}
+                  </select>
                 </div>
-                {/* Hint row */}
-                {conv.unit_name && conv.conversion_factor > 0 && (
-                  <div className="col-span-12 text-[10px] text-blue-500">
-                    1 {conv.unit_name} = {conv.conversion_factor} {form.unit_name || 'pcs'}
-                    {conv.purchase_price > 0 && ` · Buy: रू${conv.purchase_price}/${conv.unit_name}`}
-                    {conv.sale_price > 0 && ` · Sell: रू${conv.sale_price}/${conv.unit_name}`}
+                <button
+                  type="button"
+                  onClick={() => removeConversion(idx)}
+                  className="rounded p-1 text-slate-300 hover:bg-red-50 hover:text-red-500"
+                >
+                  <X size={14} />
+                </button>
+                {idx === 0 && conv.unit_name && (
+                  <div className="w-full text-[10px] text-blue-500">
+                    Stock is counted in {conv.unit_name}. Buying 1 {form.unit_name || 'unit'} adds {conv.conversion_factor || 0} {conv.unit_name}.
                   </div>
                 )}
               </div>
             ))}
+
+            {formPair && stockUnitName && (
+              <div className="mt-1 rounded-lg bg-white px-3 py-2 text-xs text-slate-600">
+                {trimQty(Number(form.stock) || 0)} {stockUnitName} shows as{' '}
+                <span className="font-semibold text-slate-800">
+                  {trimQty(formPair.whole)} {form.unit_name || 'unit'} and {trimQty(formPair.remainder)} {stockUnitName}
+                </span>
+              </div>
+            )}
           </div>
         </div>
       </Modal>

@@ -68,7 +68,11 @@ function getUnitOptions(item: Item): UnitOption[] {
   return [base, ...alts];
 }
 
-/** Given an item + selected unit_name, return the matching UnitOption */
+function preferredOption(item: Item, buying: boolean): UnitOption {
+  const opts = getUnitOptions(item);
+  if (!buying || opts.length < 2) return opts[0];
+  return opts.reduce((best, option) => (option.conversion_factor > best.conversion_factor ? option : best));
+}
 function findUnitOption(item: Item, unitName: string): UnitOption {
   return getUnitOptions(item).find((o) => o.unit_name === unitName) ?? {
     label: unitName, unit_name: unitName,
@@ -181,16 +185,18 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
   const addLine = () => {
     const newItem = items?.[0];
     if (!newItem) return;
-    const rate = txnType === 'PurchaseBill' ? newItem.purchase_price : newItem.sale_price;
+    const isPurchase = txnType === 'PurchaseBill' || txnType === 'PurchaseOrder' || txnType === 'PurchaseReturn';
+    const opt = preferredOption(newItem, isPurchase);
+    const rate = isPurchase ? opt.purchase_price : opt.sale_price;
     const line: TransactionLine = {
       item: newItem.id, item_name: newItem.name, hsn: newItem.hsn,
       qty: 1, free_qty: 0,
-      unit: newItem.unit_name,
+      unit: opt.unit_name,
       rate,
       discount_percent: 0,
       gst_rate: isGst ? newItem.gst_rate : 0,
       amount: rate,
-      conversion_factor: 1,
+      conversion_factor: opt.conversion_factor,
     };
     line.amount = calcLine(line).amount;
     setLines((prev) => [...prev, line]);
@@ -211,17 +217,19 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
   const onItemChange = (index: number, itemId: number) => {
     const item = items?.find((i) => i.id === Number(itemId));
     if (!item) return;
-    const rate = txnType === 'PurchaseBill' ? item.purchase_price : item.sale_price;
+    const isPurchase = txnType === 'PurchaseBill' || txnType === 'PurchaseOrder' || txnType === 'PurchaseReturn';
+    const opt = preferredOption(item, isPurchase);
+    const rate = isPurchase ? opt.purchase_price : opt.sale_price;
     setLines((prev) => {
       const updated = [...prev];
       const line: TransactionLine = {
         ...updated[index],
         item: item.id, item_name: item.name,
         hsn: item.hsn,
-        unit: item.unit_name,
+        unit: opt.unit_name,
         rate,
         gst_rate: isGst ? item.gst_rate : 0,
-        conversion_factor: 1,
+        conversion_factor: opt.conversion_factor,
       };
       line.amount = calcLine(line).amount;
       updated[index] = line;

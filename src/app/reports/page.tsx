@@ -123,7 +123,7 @@ export default function ReportsPage() {
         )}
         {data && activeTab === 'stock' && (
           <ReportTable headers={['Item', 'HSN', 'Stock', 'Unit', 'Stock Value', 'Min Stock', 'Status']}
-            rows={(data.rows || []).map((s: any) => [s.name, s.hsn || '-', String(s.stock), s.unit, formatCurrency(s.value, 'रू', 0), String(s.min_stock), s.low ? <span className="text-red-500 font-medium">Low Stock</span> : <span className="text-emerald-500">OK</span>])} />
+            rows={(data.rows || []).map((s: any) => [s.name, s.hsn || '-', s.stock_display || String(s.stock), s.unit, formatCurrency(s.value, 'रू', 0), String(s.min_stock), s.low ? <span className="text-red-500 font-medium">Low Stock</span> : <span className="text-emerald-500">OK</span>])} />
         )}
       </Card>
     </div>
