@@ -32,7 +32,9 @@ const pageTitles: Record<string, string> = {
 function getTitle(pathname: string): string {
   if (pathname.includes('/new')) return 'New Transaction';
   if (pathname.includes('/edit')) return 'Edit Transaction';
-  return pageTitles[pathname] || 'Vyapar';
+  // Strip trailing slash for lookup
+  const key = pathname.endsWith('/') && pathname !== '/' ? pathname.slice(0, -1) : pathname;
+  return pageTitles[key] || 'Vyapar';
 }
 
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -40,11 +42,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const { user, isLoading } = useAuth();
 
-  const isLoginPage = pathname === '/login';
+  // Handle trailing slash: /login and /login/ are both the login page
+  const isLoginPage = pathname === '/login' || pathname === '/login/';
 
   useEffect(() => {
     if (isLoading) return;
-    // Only redirect to login if there's genuinely no token (not just a mid-render state lag)
     const hasToken = !!getAuthToken();
     if (isLoginPage && user) {
       router.replace('/');
@@ -53,12 +55,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     }
   }, [isLoading, user, isLoginPage, router]);
 
-  // Login page — always render the login form directly
+  // Login page — always render the login form, no shell
   if (isLoginPage) {
     return <>{children}</>;
   }
 
-  // Show loading while auth check is in progress
+  // Auth is still being checked
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
@@ -70,7 +72,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Not authenticated and no token — redirect is handled by useEffect above
+  // No user, no token — wait for useEffect to redirect
   if (!user) {
     return (
       <div className="flex h-screen items-center justify-center bg-slate-50">
