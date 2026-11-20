@@ -147,7 +147,18 @@ export const api = {
 
   // Current user
   getMe: () => fetcher<User>(`${API_BASE}/auth/me/`),
+
+  // Change password
+  changePassword: (old_password: string, new_password: string) =>
+    send<{ detail: string }>(`${API_BASE}/auth/change-password/`, 'POST', { old_password, new_password }),
 };
 
 // SWR fetcher
 export const swrFetcher = (url: string) => fetcher(url);
+
+/** First row of a list endpoint. Accepts a raw array or a single cached object. */
+export function firstRecord<T>(data: unknown): T | undefined {
+  if (Array.isArray(data)) return data[0] as T | undefined;
+  if (data && typeof data === 'object') return data as T;
+  return undefined;
+}

@@ -5,15 +5,15 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import useSWR from 'swr';
 import { API_BASE } from '@/lib/config';
-import { authHeaders } from '@/lib/auth';
+import { firstRecord } from '@/lib/api';
 import { useAuth } from '@/lib/auth';
+import type { BusinessProfile } from '@/lib/types';
 
 export function TopBar({ title }: { title: string }) {
   const router = useRouter();
   const { user, logout } = useAuth();
-  const { data: business } = useSWR(`${API_BASE}/business/`, (url: string) =>
-    fetch(url, { headers: { ...authHeaders() } }).then((r) => r.json()).then((arr: any[]) => arr?.[0])
-  );
+  const { data: businessList } = useSWR(`${API_BASE}/business/`);
+  const business = firstRecord<BusinessProfile>(businessList);
 
   const handleLogout = () => {
     logout();

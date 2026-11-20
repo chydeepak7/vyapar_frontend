@@ -7,8 +7,7 @@ import useSWRImmutable from 'swr/immutable';
 import { Button } from '@/components/ui/Button';
 import { formatCurrency, formatDate } from '@/utils/format';
 import { printTransaction, downloadTransactionPDF } from '@/utils/pdf';
-import { api } from '@/lib/api';
-import { authHeaders } from '@/lib/auth';
+import { api, firstRecord } from '@/lib/api';
 import { API_BASE } from '@/lib/config';
 import { Plus, Search, Printer, Download, Trash2, FileText, Eye } from 'lucide-react';
 import type { TxnType, Transaction, BusinessProfile } from '@/lib/types';
@@ -22,7 +21,8 @@ interface Props {
 
 export function TransactionList({ txnType, title, createPath, editPathBase }: Props) {
   const router = useRouter();
-  const { data: business } = useSWRImmutable(`${API_BASE}/business/`, (url: string) => fetch(url, { headers: { ...authHeaders() } }).then((r) => r.json()).then((a: any[]) => a?.[0]));
+  const { data: businessList } = useSWRImmutable(`${API_BASE}/business/`);
+  const business = firstRecord<BusinessProfile>(businessList);
   const { data: transactions, mutate } = useSWR<Transaction[]>(
     `${API_BASE}/transactions/?type=${txnType}`
   );

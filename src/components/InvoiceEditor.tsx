@@ -8,11 +8,11 @@ import { Input, Select, TextArea } from '@/components/ui/Input';
 import { formatCurrency, todayISO, addDays, extractInvoiceNo, nextInvoiceNo, formatDate } from '@/utils/format';
 import { calcLine, calcTxnTotals, isIntraState } from '@/utils/gst';
 import { printTransaction, downloadTransactionPDF } from '@/utils/pdf';
-import { api } from '@/lib/api';
+import { api, firstRecord } from '@/lib/api';
 import { authHeaders } from '@/lib/auth';
 import { API_BASE } from '@/lib/config';
 import { Plus, Trash2, Save, Printer, Download, ArrowLeft, Package } from 'lucide-react';
-import type { Transaction, TransactionLine, TxnType, PaymentType, Item, Party } from '@/lib/types';
+import type { Transaction, TransactionLine, TxnType, PaymentType, Item, Party, BusinessProfile, Settings } from '@/lib/types';
 
 const txnTypeLabel: Record<TxnType, string> = {
   SaleInvoice: 'Sale Invoice', PurchaseBill: 'Purchase Bill',
@@ -37,8 +37,10 @@ interface Props {
 
 export function InvoiceEditor({ txnType, txnId }: Props) {
   const router = useRouter();
-  const { data: business } = useSWR(`${API_BASE}/business/`, (url: string) => fetch(url, { headers: { ...authHeaders() } }).then((r) => r.json()).then((a: any[]) => a?.[0]));
-  const { data: settings } = useSWR(`${API_BASE}/settings/`, (url: string) => fetch(url, { headers: { ...authHeaders() } }).then((r) => r.json()).then((a: any[]) => a?.[0]));
+  const { data: businessList } = useSWR(`${API_BASE}/business/`);
+  const { data: settingsList } = useSWR(`${API_BASE}/settings/`);
+  const business = firstRecord<BusinessProfile>(businessList);
+  const settings = firstRecord<Settings>(settingsList);
   const { data: parties } = useSWR<Party[]>(`${API_BASE}/parties/`, (url: string) => fetch(url, { headers: { ...authHeaders() } }).then((r) => r.json()));
   const { data: items } = useSWR<Item[]>(`${API_BASE}/items/`, (url: string) => fetch(url, { headers: { ...authHeaders() } }).then((r) => r.json()));
   const { data: allTxns } = useSWR<Transaction[]>(`${API_BASE}/transactions/`, (url: string) => fetch(url, { headers: { ...authHeaders() } }).then((r) => r.json()));

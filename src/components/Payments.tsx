@@ -7,10 +7,10 @@ import { Modal } from '@/components/ui/Modal';
 import { Input, Select, TextArea } from '@/components/ui/Input';
 import { formatCurrency, formatDate, todayISO, nextInvoiceNo, extractInvoiceNo } from '@/utils/format';
 import { printTransaction } from '@/utils/pdf';
-import { api } from '@/lib/api';
+import { api, firstRecord } from '@/lib/api';
 import { authHeaders } from '@/lib/auth';
 import { Plus, Search, Printer, Trash2, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
-import type { TxnType, PaymentType, Party, Transaction } from '@/lib/types';
+import type { TxnType, PaymentType, Party, Transaction, BusinessProfile, Settings } from '@/lib/types';
 import { API_BASE } from '@/lib/config';
 
 interface Props {
@@ -19,8 +19,10 @@ interface Props {
 
 export function Payments({ txnType }: Props) {
   const isIn = txnType === 'PaymentIn';
-  const { data: business } = useSWR(`${API_BASE}/business/`, (url: string) => fetch(url, { headers: { ...authHeaders() } }).then((r) => r.json()).then((a: any[]) => a?.[0]));
-  const { data: settings } = useSWR(`${API_BASE}/settings/`, (url: string) => fetch(url, { headers: { ...authHeaders() } }).then((r) => r.json()).then((a: any[]) => a?.[0]));
+  const { data: businessList } = useSWR(`${API_BASE}/business/`);
+  const { data: settingsList } = useSWR(`${API_BASE}/settings/`);
+  const business = firstRecord<BusinessProfile>(businessList);
+  const settings = firstRecord<Settings>(settingsList);
   const { data: parties } = useSWR<Party[]>(`${API_BASE}/parties/`, (url: string) => fetch(url, { headers: { ...authHeaders() } }).then((r) => r.json()));
   const { data: transactions, mutate } = useSWR<Transaction[]>(
     `${API_BASE}/transactions/?type=${txnType}`,
