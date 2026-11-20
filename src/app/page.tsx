@@ -13,6 +13,7 @@ import {
   AreaChart, Area,
 } from 'recharts';
 import type { DashboardData, TxnType } from '@/lib/types';
+import { API_BASE } from '@/lib/config';
 
 const txnTypeLabel = (t: TxnType) => {
   const map: Record<string, string> = {
@@ -40,7 +41,7 @@ const CustomTooltip = ({ active, payload, label, currency }: any) => {
 };
 
 export default function Dashboard() {
-  const { data, error } = useSWR<DashboardData>('/api/dashboard/');
+  const { data, error } = useSWR<DashboardData>(`${API_BASE}/dashboard/`);
 
   if (error) return <div className="text-center text-red-400 py-10">Error loading dashboard. Is the backend running?</div>;
   if (!data) return <div className="text-center text-slate-400 py-10">Loading dashboard...</div>;
