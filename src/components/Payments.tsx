@@ -10,7 +10,8 @@ import { printTransaction } from '@/utils/pdf';
 import { api, firstRecord } from '@/lib/api';
 import { authHeaders } from '@/lib/auth';
 import { Plus, Search, Printer, Trash2, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
-import type { TxnType, PaymentType, Party, Transaction, BusinessProfile, Settings } from '@/lib/types';
+import type { TxnType, PaymentType, PaymentLine, Party, Transaction, BusinessProfile, Settings } from '@/lib/types';
+import { PaymentBreakdown } from '@/components/ui/PaymentBreakdown';
 import { API_BASE } from '@/lib/config';
 
 interface Props {
@@ -34,9 +35,12 @@ export function Payments({ txnType }: Props) {
   const [search, setSearch] = useState('');
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState({
-    partyId: 0, amount: 0, date: todayISO(),
-    paymentType: 'Cash' as PaymentType, note: '', invoiceNo: '', linkedInvoiceId: 0,
+    partyId: 0, date: todayISO(),
+    note: '', invoiceNo: '', linkedInvoiceId: 0,
   });
+  const [paymentLines, setPaymentLines] = useState<PaymentLine[]>([
+    { payment_type: 'Cash', amount: 0 },
+  ]);
 
   useEffect(() => {
     if (modalOpen && settings) {
@@ -55,28 +59,40 @@ export function Payments({ txnType }: Props) {
 
   const total = payments.reduce((s, t) => s + Number(t.paid_amount), 0);
 
+  const total = paymentLines.reduce((s, pl) => s + (Number(pl.amount) || 0), 0);
+
   const openAdd = () => {
-    setForm({ partyId: 0, amount: 0, date: todayISO(), paymentType: 'Cash', note: '', invoiceNo: '', linkedInvoiceId: 0 });
+    setForm({ partyId: 0, date: todayISO(), note: '', invoiceNo: '', linkedInvoiceId: 0 });
+    setPaymentLines([{ payment_type: 'Cash', amount: 0 }]);
     setModalOpen(true);
   };
 
   const save = async () => {
-    if (!form.partyId || form.amount <= 0) { alert('Please select a party and enter an amount.'); return; }
+    if (!form.partyId || total <= 0) { alert('Please select a party and enter an amount.'); return; }
     const party = parties?.find((p) => p.id === form.partyId);
     if (!party) return;
+    const validLines = paymentLines.filter((pl) => Number(pl.amount) > 0);
     await api.createTransaction({
       type: txnType, invoice_no: form.invoiceNo, party: form.partyId,
       party_name: party.name, date: form.date, lines: [],
       sub_total: 0, discount_amount: 0, additional_charges: 0, round_off: 0,
       cgst: 0, sgst: 0, igst: 0, cess: 0,
-      total_amount: form.amount, paid_amount: form.amount, balance_amount: 0,
-      payment_type: form.paymentType, notes: form.note, is_gst: false,
+      total_amount: total, paid_amount: total, balance_amount: 0,
+      payment_type: validLines.length > 0 ? validLines[0].payment_type : 'Cash',
+      payment_lines: validLines.map((pl) => ({
+        payment_type: pl.payment_type,
+        amount: pl.amount,
+        reference_no: pl.reference_no || '',
+        bank_account: pl.bank_account || null,
+        date: pl.date || null,
+      })),
+      notes: form.note, is_gst: false,
     } as any);
 
     if (form.linkedInvoiceId) {
       const inv = allTxns?.find((t) => t.id === form.linkedInvoiceId);
       if (inv) {
-        const newPaid = Number(inv.paid_amount) + form.amount;
+        const newPaid = Number(inv.paid_amount) + total;
         const newBalance = Math.max(0, Number(inv.total_amount) - newPaid);
         await api.updateTransaction(inv.id, { paid_amount: newPaid, balance_amount: newBalance });
       }
@@ -155,12 +171,10 @@ export function Payments({ txnType }: Props) {
             {parties?.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </Select>
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Amount *" type="number" value={form.amount} onChange={(e) => setForm({ ...form, amount: +e.target.value })} />
+            <Input label="Total Amount" type="number" value={total} readOnly className="bg-slate-50" />
             <Input label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           </div>
-          <Select label="Payment Type" value={form.paymentType} onChange={(e) => setForm({ ...form, paymentType: e.target.value as PaymentType })}>
-            <option value="Cash">Cash</option><option value="Cheque">Cheque</option><option value="UPI">UPI</option><option value="Bank Transfer">Bank Transfer</option>
-          </Select>
+          <PaymentBreakdown paymentLines={paymentLines} onChange={setPaymentLines} />
           {unpaidInvoices.length > 0 && (
             <Select label="Link to Invoice (Optional)" value={form.linkedInvoiceId} onChange={(e) => setForm({ ...form, linkedInvoiceId: +e.target.value })}>
               <option value={0}>None</option>

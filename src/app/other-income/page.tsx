@@ -9,7 +9,8 @@ import { formatCurrency, formatDate, todayISO } from '@/utils/format';
 import { api } from '@/lib/api';
 import { API_BASE } from '@/lib/config';
 import { Plus, Search, Trash2, Pencil, TrendingUp } from 'lucide-react';
-import type { OtherIncome as OtherIncomeType, PaymentType } from '@/lib/types';
+import type { OtherIncome as OtherIncomeType, PaymentLine } from '@/lib/types';
+import { PaymentBreakdown } from '@/components/ui/PaymentBreakdown';
 
 const emptyIncome: Omit<OtherIncomeType, 'id' | 'created_at'> = {
   category: '', amount: 0, date: todayISO(), payment_type: 'Cash', note: '',
@@ -21,6 +22,7 @@ export default function OtherIncomePage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<OtherIncomeType | null>(null);
   const [form, setForm] = useState<any>(emptyIncome);
+  const [paymentLines, setPaymentLines] = useState<PaymentLine[]>([{ payment_type: 'Cash', amount: 0 }]);
 
   const filtered = (incomes || []).filter((i) => {
     if (!search) return true;
@@ -32,13 +34,32 @@ export default function OtherIncomePage() {
   const byCategory: Record<string, number> = {};
   (incomes || []).forEach((i) => { byCategory[i.category] = (byCategory[i.category] || 0) + Number(i.amount); });
 
-  const openAdd = () => { setEditing(null); setForm(emptyIncome); setModalOpen(true); };
-  const openEdit = (inc: OtherIncomeType) => { setEditing(inc); setForm({ ...inc }); setModalOpen(true); };
+  const openAdd = () => { setEditing(null); setForm(emptyIncome); setPaymentLines([{ payment_type: 'Cash', amount: 0 }]); setModalOpen(true); };
+  const openEdit = (inc: OtherIncomeType) => {
+    setEditing(inc);
+    setForm({ ...inc });
+    setPaymentLines(
+      (inc.payment_lines && inc.payment_lines.length > 0)
+        ? inc.payment_lines.map((pl) => ({ ...pl, amount: Number(pl.amount) }))
+        : [{ payment_type: inc.payment_type, amount: Number(inc.amount) }],
+    );
+    setModalOpen(true);
+  };
 
   const save = async () => {
     if (!form.category.trim() || Number(form.amount) <= 0) { alert('Please enter category and amount.'); return; }
-    if (editing) await api.updateOtherIncome(editing.id, form);
-    else await api.createOtherIncome(form);
+    const validLines = paymentLines.filter((pl) => Number(pl.amount) > 0);
+    const payload = {
+      ...form,
+      payment_type: validLines.length > 0 ? validLines[0].payment_type : 'Cash',
+      payment_lines: validLines.map((pl) => ({
+        payment_type: pl.payment_type, amount: pl.amount,
+        reference_no: pl.reference_no || '', bank_account: pl.bank_account || null,
+        date: pl.date || null,
+      })),
+    };
+    if (editing) await api.updateOtherIncome(editing.id, payload);
+    else await api.createOtherIncome(payload);
     setModalOpen(false);
     mutate();
     globalMutate(`${API_BASE}/dashboard/`);
@@ -90,7 +111,7 @@ export default function OtherIncomePage() {
         <div className="space-y-3">
           <Input label="Category *" value={form.category} onChange={(e) => set('category', e.target.value)} placeholder="e.g. Interest, Commission" />
           <div className="grid grid-cols-2 gap-3"><Input label="Amount *" type="number" value={form.amount} onChange={(e) => set('amount', +e.target.value)} /><Input label="Date" type="date" value={form.date} onChange={(e) => set('date', e.target.value)} /></div>
-          <Select label="Payment Type" value={form.payment_type} onChange={(e) => set('payment_type', e.target.value as PaymentType)}><option value="Cash">Cash</option><option value="Cheque">Cheque</option><option value="UPI">UPI</option><option value="Bank Transfer">Bank Transfer</option></Select>
+          <PaymentBreakdown paymentLines={paymentLines} onChange={setPaymentLines} />
           <TextArea label="Note" rows={2} value={form.note} onChange={(e) => set('note', e.target.value)} />
         </div>
       </Modal>

@@ -191,6 +191,7 @@ export interface Expense {
   amount: number;
   date: string;
   payment_type: PaymentType;
+  payment_lines?: PaymentLine[];
   note: string;
   gst_amount: number;
   is_gst: boolean;
@@ -204,6 +205,7 @@ export interface OtherIncome {
   amount: number;
   date: string;
   payment_type: PaymentType;
+  payment_lines?: PaymentLine[];
   note: string;
   created_at: string;
 }

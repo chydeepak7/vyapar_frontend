@@ -9,7 +9,8 @@ import { formatCurrency, formatDate, todayISO } from '@/utils/format';
 import { api } from '@/lib/api';
 import { API_BASE } from '@/lib/config';
 import { Plus, Search, Trash2, Pencil, TrendingDown } from 'lucide-react';
-import type { Expense, PaymentType } from '@/lib/types';
+import type { Expense, PaymentLine } from '@/lib/types';
+import { PaymentBreakdown } from '@/components/ui/PaymentBreakdown';
 
 const emptyExpense: Omit<Expense, 'id' | 'created_at'> = {
   category: '', amount: 0, date: todayISO(), payment_type: 'Cash',
@@ -22,6 +23,7 @@ export default function ExpensesPage() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Expense | null>(null);
   const [form, setForm] = useState<any>(emptyExpense);
+  const [paymentLines, setPaymentLines] = useState<PaymentLine[]>([{ payment_type: 'Cash', amount: 0 }]);
 
   const filtered = (expenses || []).filter((e) => {
     if (!search) return true;
@@ -33,13 +35,32 @@ export default function ExpensesPage() {
   const byCategory: Record<string, number> = {};
   (expenses || []).forEach((e) => { byCategory[e.category] = (byCategory[e.category] || 0) + Number(e.amount); });
 
-  const openAdd = () => { setEditing(null); setForm(emptyExpense); setModalOpen(true); };
-  const openEdit = (exp: Expense) => { setEditing(exp); setForm({ ...exp }); setModalOpen(true); };
+  const openAdd = () => { setEditing(null); setForm(emptyExpense); setPaymentLines([{ payment_type: 'Cash', amount: 0 }]); setModalOpen(true); };
+  const openEdit = (exp: Expense) => {
+    setEditing(exp);
+    setForm({ ...exp });
+    setPaymentLines(
+      (exp.payment_lines && exp.payment_lines.length > 0)
+        ? exp.payment_lines.map((pl) => ({ ...pl, amount: Number(pl.amount) }))
+        : [{ payment_type: exp.payment_type, amount: Number(exp.amount) }],
+    );
+    setModalOpen(true);
+  };
 
   const save = async () => {
     if (!form.category.trim() || Number(form.amount) <= 0) { alert('Please enter category and amount.'); return; }
-    if (editing) await api.updateExpense(editing.id, form);
-    else await api.createExpense(form);
+    const validLines = paymentLines.filter((pl) => Number(pl.amount) > 0);
+    const payload = {
+      ...form,
+      payment_type: validLines.length > 0 ? validLines[0].payment_type : 'Cash',
+      payment_lines: validLines.map((pl) => ({
+        payment_type: pl.payment_type, amount: pl.amount,
+        reference_no: pl.reference_no || '', bank_account: pl.bank_account || null,
+        date: pl.date || null,
+      })),
+    };
+    if (editing) await api.updateExpense(editing.id, payload);
+    else await api.createExpense(payload);
     setModalOpen(false);
     mutate();
     globalMutate(`${API_BASE}/dashboard/`);
@@ -91,7 +112,7 @@ export default function ExpensesPage() {
         <div className="space-y-3">
           <Input label="Category *" value={form.category} onChange={(e) => set('category', e.target.value)} placeholder="e.g. Office Rent" />
           <div className="grid grid-cols-2 gap-3"><Input label="Amount *" type="number" value={form.amount} onChange={(e) => set('amount', +e.target.value)} /><Input label="Date" type="date" value={form.date} onChange={(e) => set('date', e.target.value)} /></div>
-          <Select label="Payment Type" value={form.payment_type} onChange={(e) => set('payment_type', e.target.value as PaymentType)}><option value="Cash">Cash</option><option value="Cheque">Cheque</option><option value="UPI">UPI</option><option value="Bank Transfer">Bank Transfer</option></Select>
+          <PaymentBreakdown paymentLines={paymentLines} onChange={setPaymentLines} />
           <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" checked={form.is_gst} onChange={(e) => set('is_gst', e.target.checked)} className="rounded" /> GST Applicable</label>
           {form.is_gst && <Input label="GST Amount" type="number" value={form.gst_amount} onChange={(e) => set('gst_amount', +e.target.value)} />}
           <TextArea label="Note" rows={2} value={form.note} onChange={(e) => set('note', e.target.value)} />
