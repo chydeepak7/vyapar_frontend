@@ -59,7 +59,7 @@ export function Payments({ txnType }: Props) {
 
   const total = payments.reduce((s, t) => s + Number(t.paid_amount), 0);
 
-  const total = paymentLines.reduce((s, pl) => s + (Number(pl.amount) || 0), 0);
+  const totalPaid = paymentLines.reduce((s, pl) => s + (Number(pl.amount) || 0), 0);
 
   const openAdd = () => {
     setForm({ partyId: 0, date: todayISO(), note: '', invoiceNo: '', linkedInvoiceId: 0 });
@@ -68,7 +68,7 @@ export function Payments({ txnType }: Props) {
   };
 
   const save = async () => {
-    if (!form.partyId || total <= 0) { alert('Please select a party and enter an amount.'); return; }
+    if (!form.partyId || totalPaid <= 0) { alert('Please select a party and enter an amount.'); return; }
     const party = parties?.find((p) => p.id === form.partyId);
     if (!party) return;
     const validLines = paymentLines.filter((pl) => Number(pl.amount) > 0);
@@ -77,7 +77,7 @@ export function Payments({ txnType }: Props) {
       party_name: party.name, date: form.date, lines: [],
       sub_total: 0, discount_amount: 0, additional_charges: 0, round_off: 0,
       cgst: 0, sgst: 0, igst: 0, cess: 0,
-      total_amount: total, paid_amount: total, balance_amount: 0,
+      total_amount: totalPaid, paid_amount: totalPaid, balance_amount: 0,
       payment_type: validLines.length > 0 ? validLines[0].payment_type : 'Cash',
       payment_lines: validLines.map((pl) => ({
         payment_type: pl.payment_type,
@@ -92,7 +92,7 @@ export function Payments({ txnType }: Props) {
     if (form.linkedInvoiceId) {
       const inv = allTxns?.find((t) => t.id === form.linkedInvoiceId);
       if (inv) {
-        const newPaid = Number(inv.paid_amount) + total;
+        const newPaid = Number(inv.paid_amount) + totalPaid;
         const newBalance = Math.max(0, Number(inv.total_amount) - newPaid);
         await api.updateTransaction(inv.id, { paid_amount: newPaid, balance_amount: newBalance });
       }
@@ -171,7 +171,7 @@ export function Payments({ txnType }: Props) {
             {parties?.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
           </Select>
           <div className="grid grid-cols-2 gap-3">
-            <Input label="Total Amount" type="number" value={total} readOnly className="bg-slate-50" />
+            <Input label="Total Amount" type="number" value={totalPaid} readOnly className="bg-slate-50" />
             <Input label="Date" type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} />
           </div>
           <PaymentBreakdown paymentLines={paymentLines} onChange={setPaymentLines} />
