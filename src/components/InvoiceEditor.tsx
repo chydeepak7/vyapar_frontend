@@ -13,7 +13,7 @@ import { authHeaders } from '@/lib/auth';
 import { API_BASE } from '@/lib/config';
 import { Plus, Trash2, Save, Printer, ArrowLeft, Package } from 'lucide-react';
 import type {
-  Transaction, TransactionLine, TxnType, PaymentType,
+  Transaction, TransactionLine, TxnType, PaymentType, PaymentLine,
   Item, Party, BusinessProfile, Settings, ItemUnitConversion,
 } from '@/lib/types';
 
@@ -116,10 +116,11 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
   const [date, setDate] = useState(todayISO());
   const [dueDate, setDueDate] = useState(addDays(todayISO(), 30));
   const [invoiceNo, setInvoiceNo] = useState('');
-  const [paymentType, setPaymentType] = useState<PaymentType>('Credit');
+  const [paymentLines, setPaymentLines] = useState<PaymentLine[]>([
+    { payment_type: 'Credit', amount: 0 },
+  ]);
   const [txnDiscount, setTxnDiscount] = useState(0);
   const [additionalCharges, setAdditionalCharges] = useState(0);
-  const [paidAmount, setPaidAmount] = useState(0);
   const [notes, setNotes] = useState('');
   const [terms, setTerms] = useState('Payment due within 30 days');
   const [stateOfSupply, setStateOfSupply] = useState(business?.state || '');
@@ -136,10 +137,11 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
         setDate(txn.date);
         setDueDate(txn.due_date || addDays(todayISO(), 30));
         setInvoiceNo(txn.invoice_no);
-        setPaymentType(txn.payment_type);
+        setPaymentLines(
+          (txn.payment_lines || []).map((pl) => ({ ...pl, amount: Number(pl.amount) })),
+        );
         setTxnDiscount(Number(txn.discount_amount));
         setAdditionalCharges(Number(txn.additional_charges));
-        setPaidAmount(Number(txn.paid_amount));
         setNotes(txn.notes || '');
         setTerms(txn.terms || '');
         setStateOfSupply(txn.state_of_supply || business?.state || '');
@@ -174,9 +176,14 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
     [lines, interState, txnDiscount, additionalCharges, settings],
   );
 
+  const totalPaid = useMemo(
+    () => paymentLines.reduce((s, pl) => s + (Number(pl.amount) || 0), 0),
+    [paymentLines],
+  );
+
   const balanceAmount = Math.max(
     0,
-    (isGst ? totals.totalAmount : totals.subTotal + totals.additionalCharges) - paidAmount,
+    (isGst ? totals.totalAmount : totals.subTotal + totals.additionalCharges) - totalPaid,
   );
 
   // ── Line helpers ──────────────────────────────────────────────────────────
@@ -265,6 +272,20 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
   const removeLine = (index: number) =>
     setLines((prev) => prev.filter((_, i) => i !== index));
 
+  // ── Payment line helpers ──────────────────────────────────────────────────
+  const addPaymentLine = () =>
+    setPaymentLines((prev) => [...prev, { payment_type: 'Cash', amount: 0 }]);
+
+  const updatePaymentLine = (index: number, field: keyof PaymentLine, value: string | number) =>
+    setPaymentLines((prev) => {
+      const updated = [...prev];
+      updated[index] = { ...updated[index], [field]: value };
+      return updated;
+    });
+
+  const removePaymentLine = (index: number) =>
+    setPaymentLines((prev) => prev.filter((_, i) => i !== index));
+
   // ── Save ──────────────────────────────────────────────────────────────────
   const save = async (thenPrint: boolean) => {
     if (!selectedParty || lines.length === 0) {
@@ -290,8 +311,18 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
       additional_charges: totals.additionalCharges, round_off: totals.roundOff,
       cgst: isGst ? totals.cgst : 0, sgst: isGst ? totals.sgst : 0,
       igst: isGst ? totals.igst : 0, cess: 0,
-      total_amount: totalAmount, paid_amount: paidAmount,
-      balance_amount: balanceAmount, payment_type: paymentType,
+      total_amount: totalAmount, paid_amount: totalPaid,
+      balance_amount: balanceAmount,
+      payment_type: paymentLines.length > 0 ? paymentLines[0].payment_type : 'Credit',
+      payment_lines: paymentLines
+        .filter((pl) => Number(pl.amount) > 0)
+        .map((pl) => ({
+          payment_type: pl.payment_type,
+          amount: pl.amount,
+          reference_no: pl.reference_no || '',
+          bank_account: pl.bank_account || null,
+          date: pl.date || null,
+        })),
       notes, terms, state_of_supply: stateOfSupply,
       reverse_charge: reverseCharge, is_gst: isGst,
     };
@@ -344,13 +375,6 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
           {(txnType === 'SaleInvoice' || txnType === 'PurchaseBill') && (
             <Input label="Due Date" type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
           )}
-          <Select label="Payment Type" value={paymentType} onChange={(e) => setPaymentType(e.target.value as PaymentType)}>
-            <option value="Credit">Credit</option>
-            <option value="Cash">Cash</option>
-            <option value="Cheque">Cheque</option>
-            <option value="UPI">UPI</option>
-            <option value="Bank Transfer">Bank Transfer</option>
-          </Select>
         </div>
 
         <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-3">
@@ -597,13 +621,58 @@ export function InvoiceEditor({ txnType, txnId }: Props) {
                 )}
               </span>
             </div>
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-slate-500">Paid Amount</span>
-              <input
-                type="number" value={paidAmount}
-                onChange={(e) => setPaidAmount(+e.target.value)}
-                className="w-20 rounded border border-slate-200 px-2 py-1 text-right text-sm outline-none focus:border-vyapar-500"
-              />
+            {/* ── Payment Breakdown ── */}
+            <div className="border-t border-slate-200 pt-2 mt-2">
+              <div className="text-xs font-medium text-slate-500 mb-1.5">Payment Breakdown</div>
+              {paymentLines.map((pl, idx) => (
+                <div key={idx} className="mb-1.5 space-y-1">
+                  <div className="flex items-center gap-1">
+                    <select
+                      value={pl.payment_type}
+                      onChange={(e) => updatePaymentLine(idx, 'payment_type', e.target.value as PaymentType)}
+                      className="flex-1 rounded border border-slate-200 px-1.5 py-1 text-xs outline-none focus:border-vyapar-500"
+                    >
+                      <option value="Credit">Credit</option>
+                      <option value="Cash">Cash</option>
+                      <option value="Cheque">Cheque</option>
+                      <option value="UPI">UPI</option>
+                      <option value="Bank Transfer">Bank Transfer</option>
+                    </select>
+                    <input
+                      type="number"
+                      value={pl.amount}
+                      onChange={(e) => updatePaymentLine(idx, 'amount', +e.target.value)}
+                      placeholder="Amount"
+                      className="w-20 rounded border border-slate-200 px-1.5 py-1 text-right text-xs outline-none focus:border-vyapar-500"
+                    />
+                    <button
+                      onClick={() => removePaymentLine(idx)}
+                      className="text-slate-300 hover:text-red-500"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                  {pl.payment_type === 'Cheque' && (
+                    <input
+                      value={pl.reference_no || ''}
+                      onChange={(e) => updatePaymentLine(idx, 'reference_no', e.target.value)}
+                      placeholder="Cheque / Ref No."
+                      className="w-full rounded border border-slate-200 px-1.5 py-1 text-xs outline-none focus:border-vyapar-500"
+                    />
+                  )}
+                </div>
+              ))}
+              <button
+                onClick={addPaymentLine}
+                className="text-xs font-medium text-vyapar-600 hover:text-vyapar-700"
+              >
+                + Add Payment
+              </button>
+            </div>
+
+            <div className="flex justify-between pt-1">
+              <span className="text-slate-500">Total Paid</span>
+              <span className="font-medium text-emerald-600">{formatCurrency(totalPaid, cur)}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-slate-500">Balance</span>

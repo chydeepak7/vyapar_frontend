@@ -142,6 +142,16 @@ export type TxnType =
 
 export type PaymentType = 'Cash' | 'Cheque' | 'UPI' | 'Bank Transfer' | 'Credit';
 
+// ============ Payment Line (split payment support) ============
+export interface PaymentLine {
+  id?: number;
+  payment_type: PaymentType;
+  amount: number;
+  reference_no?: string;
+  bank_account?: number | null;
+  date?: string | null;
+}
+
 export interface Transaction {
   id: number;
   type: TxnType;
@@ -164,6 +174,7 @@ export interface Transaction {
   balance_amount: number;
   payment_type: PaymentType;
   payment_mode?: string;
+  payment_lines?: PaymentLine[];
   notes?: string;
   terms?: string;
   transport_details?: string;

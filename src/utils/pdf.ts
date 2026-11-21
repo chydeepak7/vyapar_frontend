@@ -105,9 +105,18 @@ export function generateInvoicePDF(txn: Transaction, business: BusinessProfile):
   doc.setTextColor(0);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text(`Payment Type: ${txn.payment_type}`, margin, y);
-  doc.text(`Paid: ${formatCurrency(txn.paid_amount, cur)}`, margin + 70, y);
-  doc.text(`Balance: ${formatCurrency(txn.balance_amount, cur)}`, margin + 120, y);
+  if (txn.payment_lines && txn.payment_lines.length > 0) {
+    txn.payment_lines.forEach((pl, i) => {
+      const ref = pl.reference_no ? ` (${pl.reference_no})` : '';
+      doc.text(`${pl.payment_type}${ref}: ${formatCurrency(Number(pl.amount), cur)}`, margin, y);
+      y += 5;
+    });
+  } else {
+    doc.text(`Payment Type: ${txn.payment_type}`, margin, y);
+    y += 5;
+  }
+  doc.text(`Total Paid: ${formatCurrency(txn.paid_amount, cur)}`, margin, y);
+  doc.text(`Balance: ${formatCurrency(txn.balance_amount, cur)}`, margin + 70, y);
 
   if (txn.terms) {
     y += 10;
